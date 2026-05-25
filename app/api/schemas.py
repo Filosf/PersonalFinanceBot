@@ -1,5 +1,6 @@
 from datetime import datetime
 from decimal import Decimal
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -23,6 +24,7 @@ class ExpenseOut(BaseModel):
     id: int
     amount: Decimal
     currency: str
+    kind: Literal["expense", "income"]
     description: str
     spent_at: datetime
     category: CategoryOut
@@ -35,6 +37,7 @@ class ExpenseCreate(BaseModel):
     description: str = ""
     category_name: str | None = None
     spent_at: datetime | None = None
+    kind: Literal["expense", "income"] = "expense"
 
 
 class ExpenseUpdate(BaseModel):
@@ -42,6 +45,7 @@ class ExpenseUpdate(BaseModel):
     description: str | None = None
     category_id: int | None = None
     spent_at: datetime | None = None
+    kind: Literal["expense", "income"] | None = None
 
 
 class SummaryCategory(BaseModel):

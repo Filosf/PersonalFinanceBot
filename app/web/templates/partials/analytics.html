@@ -25,21 +25,38 @@
 
 <div class="metrics">
   <div>
-    <span>{{ t.total }}</span>
-    <strong>{{ "%.2f"|format(analytics.summary.total) }} {{ user.currency }}</strong>
+    <span>{{ t.total_expense }}</span>
+    <strong class="metric-expense">{{ "%.2f"|format(analytics.cashflow.expense) }} {{ user.currency }}</strong>
+  </div>
+  <div>
+    <span>{{ t.total_income }}</span>
+    <strong class="metric-income">{{ "%.2f"|format(analytics.cashflow.income) }} {{ user.currency }}</strong>
+  </div>
+  <div>
+    <span>{{ t.balance }}</span>
+    <strong class="{% if analytics.cashflow.balance >= 0 %}metric-income{% else %}metric-expense{% endif %}">
+      {{ "%.2f"|format(analytics.cashflow.balance) }} {{ user.currency }}
+    </strong>
   </div>
   <div>
     <span>{{ t.operations }}</span>
-    <strong>{{ analytics.summary.count }}</strong>
+    <strong>{{ analytics.cashflow.count }}</strong>
   </div>
 </div>
 
 <div class="chart" aria-label="{{ t.analytics }}">
   {% for item in analytics.series %}
-  {% set height = 8 if analytics.max_total == 0 else (item.total / analytics.max_total * 140) %}
-  <div class="bar-cell">
-    <div class="bar-value">{{ "%.0f"|format(item.total) }}</div>
-    <div class="bar" style="height: {{ height }}px"></div>
+  {% set income_height = 8 if analytics.max_total == 0 else (item.income / analytics.max_total * 140) %}
+  {% set expense_height = 8 if analytics.max_total == 0 else (item.expense / analytics.max_total * 140) %}
+  <div class="bar-cell paired-bar-cell">
+    <div class="paired-values">
+      <span class="income-text">{{ "%.0f"|format(item.income) }}</span>
+      <span class="expense-text">{{ "%.0f"|format(item.expense) }}</span>
+    </div>
+    <div class="bar-pair">
+      <div class="bar income-bar" style="height: {{ income_height }}px"></div>
+      <div class="bar expense-bar" style="height: {{ expense_height }}px"></div>
+    </div>
     <div class="bar-label">
       {% if analytics.granularity == "year" %}
         {{ item.bucket.strftime("%Y") }}

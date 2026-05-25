@@ -147,6 +147,7 @@ class BudgetService:
         filters = [
             Expense.user_id == user_id,
             Expense.deleted_at.is_(None),
+            Expense.kind == "expense",
             Expense.spent_at >= start_at,
             Expense.spent_at < end_at,
         ]
@@ -165,6 +166,7 @@ class BudgetService:
             .where(
                 Expense.user_id == user_id,
                 Expense.deleted_at.is_(None),
+                Expense.kind == "expense",
                 Expense.spent_at >= start_at,
                 Expense.spent_at < end_at,
             )

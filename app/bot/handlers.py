@@ -382,7 +382,7 @@ async def admin_db_health(message: Message) -> None:
 @router.message(F.text)
 async def add_expense(message: Message) -> None:
     try:
-        amount, description = parse_expense_text(message.text or "")
+        amount, description, kind = parse_expense_text(message.text or "")
     except ValueError as exc:
         key = "amount_positive_error" if "greater than zero" in str(exc) else "amount_error"
         await message.answer(tr(_telegram_locale(message), key))
@@ -395,8 +395,11 @@ async def add_expense(message: Message) -> None:
             amount,
             description=description,
             currency=user.currency,
+            kind=kind,
         )
-        budget_warnings = await BudgetService(session).warnings_for_expense(expense)
+        budget_warnings = []
+        if kind == "expense":
+            budget_warnings = await BudgetService(session).warnings_for_expense(expense)
         categories = await CategoryService(session).list_categories(user.id)
         await session.commit()
     text = _format_added(expense, user.locale)
@@ -404,7 +407,8 @@ async def add_expense(message: Message) -> None:
         text = f"{text}\n\n" + "\n\n".join(
             _format_budget_alert(line, user.locale, user.currency) for line in budget_warnings
         )
-    await message.answer(text, reply_markup=expense_actions(expense, categories, user.locale))
+    reply_markup = expense_actions(expense, categories, user.locale) if kind == "expense" else None
+    await message.answer(text, reply_markup=reply_markup)
 
 
 async def _ensure_user(session: AsyncSession, message: Message):
@@ -422,12 +426,16 @@ async def _ensure_user_from_telegram(session: AsyncSession, tg_user):
 async def _send_summary(message: Message, start_at: datetime, end_at: datetime) -> None:
     async with SessionLocal() as session:
         user = await _ensure_user(session, message)
-        summary = await ExpenseService(session).summary(user.id, start_at, end_at)
+        service = ExpenseService(session)
+        summary = await service.summary(user.id, start_at, end_at)
+        cashflow = await service.cashflow_summary(user.id, start_at, end_at)
 
     lines = [
         f"{tr(user.locale, 'period')}: {start_at.date()} - {end_at.date()}",
-        f"{tr(user.locale, 'total')}: {Decimal(summary['total']):.2f} {user.currency}",
-        f"{tr(user.locale, 'operations')}: {summary['count']}",
+        f"{tr(user.locale, 'total_expense')}: {Decimal(cashflow['expense']):.2f} {user.currency}",
+        f"{tr(user.locale, 'total_income')}: {Decimal(cashflow['income']):.2f} {user.currency}",
+        f"{tr(user.locale, 'balance')}: {Decimal(cashflow['balance']):.2f} {user.currency}",
+        f"{tr(user.locale, 'operations')}: {cashflow['count']}",
         "",
         f"{tr(user.locale, 'by_category')}:",
     ]
@@ -453,14 +461,20 @@ def _month_range(value: str | None) -> tuple[datetime, datetime]:
 
 
 def _format_added(expense, locale: str) -> str:
-    return (
-        f"{tr(locale, 'expense_added')}: {expense.amount} {expense.currency}\n"
-        f"{tr(locale, 'category')}: {category_label(expense.category.name, locale)}\n"
-        f"{tr(locale, 'description')}: {expense.description or '-'}"
-    )
+    title = "income_added" if expense.kind == "income" else "expense_added"
+    lines = [f"{tr(locale, title)}: {expense.amount} {expense.currency}"]
+    if expense.kind == "expense":
+        lines.append(f"{tr(locale, 'category')}: {category_label(expense.category.name, locale)}")
+    lines.append(f"{tr(locale, 'description')}: {expense.description or '-'}")
+    return "\n".join(lines)
 
 
 def _format_expense(expense, locale: str | None) -> str:
+    if expense.kind == "income":
+        return (
+            f"{expense.spent_at:%Y-%m-%d %H:%M} - +{expense.amount} {expense.currency} - "
+            f"{expense.description or '-'}"
+        )
     return (
         f"{expense.spent_at:%Y-%m-%d %H:%M} - {expense.amount} {expense.currency} - "
         f"{category_label(expense.category.name, locale)} - "

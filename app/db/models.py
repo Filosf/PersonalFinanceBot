@@ -57,6 +57,7 @@ class Expense(Base):
     category_id: Mapped[int] = mapped_column(ForeignKey("categories.id", ondelete="RESTRICT"))
     amount: Mapped[Decimal] = mapped_column(Numeric(12, 2))
     currency: Mapped[str] = mapped_column(String(8), default="ILS")
+    kind: Mapped[str] = mapped_column(String(16), default="expense")
     description: Mapped[str] = mapped_column(String(500), default="")
     spent_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

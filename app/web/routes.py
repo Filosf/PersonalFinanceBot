@@ -379,17 +379,25 @@ async def _analytics_context(
     start_at, end_at, granularity = _period_range(period, date_from, date_to)
     service = ExpenseService(session)
     summary = await service.summary(user.id, start_at, end_at)
-    series = await service.time_series(user.id, start_at, end_at, granularity)
+    cashflow = await service.cashflow_summary(user.id, start_at, end_at)
+    series = await service.cashflow_time_series(user.id, start_at, end_at, granularity)
     month_start = datetime.now(UTC).date().replace(day=1)
     month_start_at, month_end_at = month_bounds(month_start)
     month_summary = await service.summary(user.id, month_start_at, month_end_at)
-    max_total = max((Decimal(item["total"]) for item in series), default=Decimal("0"))
+    max_total = max(
+        (
+            max(Decimal(item["income"]), Decimal(item["expense"]))
+            for item in series
+        ),
+        default=Decimal("0"),
+    )
     return {
         "period": period,
         "date_from": start_at.date().isoformat(),
         "date_to": (end_at - timedelta(days=1)).date().isoformat(),
         "granularity": granularity,
         "summary": summary,
+        "cashflow": cashflow,
         "month_summary": month_summary,
         "month_pie": _pie_segments(month_summary["categories"]),
         "series": series,

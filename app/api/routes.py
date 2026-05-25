@@ -95,14 +95,18 @@ async def create_expense(
     user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session),
 ):
-    expense = await ExpenseService(session).add_expense(
-        user_id=user.id,
-        amount=payload.amount,
-        description=payload.description,
-        category_name=payload.category_name,
-        spent_at=payload.spent_at,
-        currency=user.currency,
-    )
+    try:
+        expense = await ExpenseService(session).add_expense(
+            user_id=user.id,
+            amount=payload.amount,
+            description=payload.description,
+            category_name=payload.category_name,
+            spent_at=payload.spent_at,
+            currency=user.currency,
+            kind=payload.kind,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
     await session.commit()
     return expense
 
@@ -122,7 +126,10 @@ async def update_expense(
             category_id=payload.category_id,
             description=payload.description,
             spent_at=payload.spent_at,
+            kind=payload.kind,
         )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
     except PermissionError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     await session.commit()

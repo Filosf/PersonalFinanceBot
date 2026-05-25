@@ -20,15 +20,26 @@
             value="{{ expense.spent_at.strftime('%Y-%m-%dT%H:%M') }}"
             aria-label="{{ t.date }}"
           >
-          <input type="number" step="0.01" min="0.01" name="amount" value="{{ expense.amount }}" aria-label="{{ t.amount }}">
+          <input
+            type="number"
+            step="0.01"
+            min="0.01"
+            name="amount"
+            value="{{ expense.amount }}"
+            aria-label="{{ t.amount }}"
+            class="{% if expense.kind == 'income' %}income-field{% else %}expense-field{% endif %}"
+          >
           <span>{{ expense.currency }}</span>
-          <select name="category_id" aria-label="{{ t.category }}">
+          <select name="category_id" aria-label="{{ t.category }}" {% if expense.kind == 'income' %}disabled{% endif %}>
             {% for category in categories %}
             <option value="{{ category.id }}" {% if category.id == expense.category_id %}selected{% endif %}>
               {{ category.name|category_label(user.locale) }}
             </option>
             {% endfor %}
           </select>
+          {% if expense.kind == 'income' %}
+          <input type="hidden" name="category_id" value="{{ expense.category_id }}">
+          {% endif %}
           <input type="text" name="description" value="{{ expense.description }}" aria-label="{{ t.description }}">
           <div class="actions">
             <button

@@ -33,13 +33,17 @@ class ExpenseService:
         category_name: str | None = None,
         spent_at: datetime | None = None,
         currency: str = "ILS",
+        kind: str = "expense",
     ) -> Expense:
+        if kind not in {"expense", "income"}:
+            raise ValueError("Unknown expense kind")
         category = await self._pick_category(user_id, description, category_name)
         expense = Expense(
             user_id=user_id,
             category_id=category.id,
             amount=amount,
             currency=currency,
+            kind=kind,
             description=description,
             spent_at=spent_at or datetime.now(UTC),
         )
@@ -56,6 +60,7 @@ class ExpenseService:
         category_id: int | None = None,
         description: str | None = None,
         spent_at: datetime | None = None,
+        kind: str | None = None,
     ) -> Expense:
         expense = await self.require_owned(user_id, expense_id)
         if amount is not None:
@@ -67,6 +72,10 @@ class ExpenseService:
             expense.description = description
         if spent_at is not None:
             expense.spent_at = spent_at
+        if kind is not None:
+            if kind not in {"expense", "income"}:
+                raise ValueError("Unknown expense kind")
+            expense.kind = kind
         await self.session.flush()
         await self.session.refresh(expense, ["category"])
         return expense
@@ -115,6 +124,7 @@ class ExpenseService:
             select(func.coalesce(func.sum(Expense.amount), 0), func.count(Expense.id)).where(
                 Expense.user_id == user_id,
                 Expense.deleted_at.is_(None),
+                Expense.kind == "expense",
                 Expense.spent_at >= date_from,
                 Expense.spent_at < date_to,
             )
@@ -131,6 +141,7 @@ class ExpenseService:
             .where(
                 Expense.user_id == user_id,
                 Expense.deleted_at.is_(None),
+                Expense.kind == "expense",
                 Expense.spent_at >= date_from,
                 Expense.spent_at < date_to,
             )
@@ -144,6 +155,34 @@ class ExpenseService:
                 {"category": name, "total": amount, "count": category_count}
                 for name, amount, category_count in categories_result
             ],
+        }
+
+    async def cashflow_summary(self, user_id: int, date_from: datetime, date_to: datetime) -> dict:
+        result = await self.session.execute(
+            select(
+                Expense.kind,
+                func.coalesce(func.sum(Expense.amount), 0),
+                func.count(Expense.id),
+            )
+            .where(
+                Expense.user_id == user_id,
+                Expense.deleted_at.is_(None),
+                Expense.spent_at >= date_from,
+                Expense.spent_at < date_to,
+            )
+            .group_by(Expense.kind)
+        )
+        totals = {
+            kind: {"total": Decimal(amount), "count": count}
+            for kind, amount, count in result
+        }
+        income = totals.get("income", {"total": Decimal("0"), "count": 0})
+        expense = totals.get("expense", {"total": Decimal("0"), "count": 0})
+        return {
+            "income": income["total"],
+            "expense": expense["total"],
+            "balance": income["total"] - expense["total"],
+            "count": income["count"] + expense["count"],
         }
 
     async def time_series(
@@ -165,6 +204,41 @@ class ExpenseService:
             {"bucket": bucket_value, "total": amount, "count": count}
             for bucket_value, amount, count in result
         ]
+
+    async def cashflow_time_series(
+        self, user_id: int, date_from: datetime, date_to: datetime, granularity: str
+    ) -> list[dict]:
+        bucket = func.date_trunc(granularity, Expense.spent_at).label("bucket")
+        result = await self.session.execute(
+            select(
+                bucket,
+                Expense.kind,
+                func.coalesce(func.sum(Expense.amount), 0),
+                func.count(Expense.id),
+            )
+            .where(
+                Expense.user_id == user_id,
+                Expense.deleted_at.is_(None),
+                Expense.spent_at >= date_from,
+                Expense.spent_at < date_to,
+            )
+            .group_by(bucket, Expense.kind)
+            .order_by(bucket)
+        )
+        by_bucket: dict[datetime, dict] = {}
+        for bucket_value, kind, amount, count in result:
+            item = by_bucket.setdefault(
+                bucket_value,
+                {
+                    "bucket": bucket_value,
+                    "income": Decimal("0"),
+                    "expense": Decimal("0"),
+                    "count": 0,
+                },
+            )
+            item[kind] = Decimal(amount)
+            item["count"] += count
+        return list(by_bucket.values())
 
     async def require_owned(self, user_id: int, expense_id: int) -> Expense:
         result = await self.session.execute(

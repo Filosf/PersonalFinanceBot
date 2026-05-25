@@ -6,6 +6,8 @@
   --muted: #697586;
   --line: #d8dee8;
   --accent: #0f766e;
+  --income: #15803d;
+  --expense: #b42318;
   --danger: #b42318;
 }
 
@@ -189,6 +191,10 @@ p {
   min-width: 54px;
 }
 
+.paired-bar-cell {
+  grid-template-rows: 34px 150px 34px;
+}
+
 .bar-value,
 .bar-label {
   color: var(--muted);
@@ -196,11 +202,45 @@ p {
   text-align: center;
 }
 
+.paired-values {
+  display: grid;
+  gap: 2px;
+  color: var(--muted);
+  font-size: 11px;
+  text-align: center;
+}
+
+.income-text,
+.metric-income {
+  color: var(--income);
+}
+
+.expense-text,
+.metric-expense {
+  color: var(--expense);
+}
+
+.bar-pair {
+  display: grid;
+  grid-template-columns: repeat(2, 16px);
+  gap: 6px;
+  align-items: end;
+  height: 150px;
+}
+
 .bar {
-  width: 70%;
+  width: 100%;
   min-height: 8px;
   border-radius: 6px 6px 0 0;
   background: var(--accent);
+}
+
+.income-bar {
+  background: var(--income);
+}
+
+.expense-bar {
+  background: var(--expense);
 }
 
 .chart-empty {
@@ -351,6 +391,15 @@ select {
   padding: 8px 10px;
   background: #fff;
   color: var(--text);
+}
+
+.income-field {
+  color: var(--income);
+  border-color: rgba(21, 128, 61, 0.45);
+}
+
+.expense-field {
+  color: var(--expense);
 }
 
 button {
