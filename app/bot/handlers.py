@@ -17,7 +17,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.bot.keyboards import expense_actions
 from app.core.config import get_settings
-from app.core.i18n import tr
+from app.core.i18n import category_label, tr
 from app.core.runtime_state import get_last_errors
 from app.db.session import SessionLocal
 from app.services.access_tokens import create_access_token
@@ -125,7 +125,8 @@ async def categories(message: Message) -> None:
         user = await _ensure_user(session, message)
         items = await CategoryService(session).list_categories(user.id)
     await message.answer(
-        "\n".join(category.name for category in items) or tr(user.locale, "no_categories")
+        "\n".join(category_label(category.name, user.locale) for category in items)
+        or tr(user.locale, "no_categories")
     )
 
 
@@ -212,7 +213,7 @@ async def last(message: Message) -> None:
     if not expense:
         await message.answer(tr(user.locale, "no_expenses_yet"))
         return
-    await message.answer(_format_expense(expense))
+    await message.answer(_format_expense(expense, user.locale))
 
 
 @router.message(F.text.startswith("/последний"))
@@ -229,7 +230,7 @@ async def delete_last(message: Message) -> None:
     if not expense:
         await message.answer(tr(user.locale, "no_expenses_to_delete"))
         return
-    await message.answer(f"{tr(user.locale, 'deleted')}: {_format_expense(expense)}")
+    await message.answer(f"{tr(user.locale, 'deleted')}: {_format_expense(expense, user.locale)}")
 
 
 @router.message(F.text.startswith("/удалить_последний"))
@@ -289,11 +290,6 @@ async def set_language(callback: CallbackQuery) -> None:
         reply_markup=_main_menu(user.locale),
     )
     await callback.answer()
-
-
-@router.callback_query(F.data.startswith("edit:"))
-async def edit_hint(callback: CallbackQuery) -> None:
-    await callback.answer(tr(_telegram_locale(callback), "edit_hint"), show_alert=True)
 
 
 @router.message(Command("admin_stats"))
@@ -442,15 +438,16 @@ def _month_range(value: str | None) -> tuple[datetime, datetime]:
 def _format_added(expense, locale: str) -> str:
     return (
         f"{tr(locale, 'expense_added')}: {expense.amount} {expense.currency}\n"
-        f"{tr(locale, 'category')}: {expense.category.name}\n"
+        f"{tr(locale, 'category')}: {category_label(expense.category.name, locale)}\n"
         f"{tr(locale, 'description')}: {expense.description or '-'}"
     )
 
 
-def _format_expense(expense) -> str:
+def _format_expense(expense, locale: str | None) -> str:
     return (
         f"{expense.spent_at:%Y-%m-%d %H:%M} - {expense.amount} {expense.currency} - "
-        f"{expense.category.name} - {expense.description or '-'}"
+        f"{category_label(expense.category.name, locale)} - "
+        f"{expense.description or '-'}"
     )
 
 
