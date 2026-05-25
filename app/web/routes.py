@@ -478,7 +478,18 @@ def _pie_segments(categories: list[dict]) -> list[dict]:
     total = sum((Decimal(item["total"]) for item in categories), Decimal("0"))
     if total <= 0:
         return []
-    colors = ("#2563eb", "#d97706", "#7c3aed", "#be123c", "#4d7c0f", "#0f172a")
+    colors = (
+        "#2563eb",
+        "#dc2626",
+        "#7c3aed",
+        "#facc15",
+        "#64748b",
+        "#db2777",
+        "#06b6d4",
+        "#f97316",
+        "#a855f7",
+        "#94a3b8",
+    )
     cursor = Decimal("0")
     segments = []
     for index, item in enumerate(categories):
