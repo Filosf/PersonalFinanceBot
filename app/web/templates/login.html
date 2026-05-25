@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="login">
+  <h1>Finance Dashboard</h1>
+  <form method="post" action="/login/key" class="panel">
+    <h2>{{ t.access_key }}</h2>
+    <p class="hint">{{ t.login_hint }}</p>
+    <label>
+      {{ t.access_key }}
+      <input name="access_key" type="text" autocomplete="one-time-code" required>
+    </label>
+    <button type="submit">{{ t.sign_in }}</button>
+  </form>
+
+  <form method="post" action="/login" class="panel secondary-login">
+    <h2>{{ t.developer_login }}</h2>
+    <label>
+      {{ t.telegram_id }}
+      <input name="telegram_id" type="number" required>
+    </label>
+    <label>
+      Username
+      <input name="username" type="text" placeholder="optional">
+    </label>
+    <button type="submit">{{ t.sign_in }}</button>
+  </form>
+</section>
+{% endblock %}

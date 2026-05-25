@@ -1,0 +1,71 @@
+<div class="analytics-head">
+  <div>
+    <h2>{{ t.analytics }}</h2>
+    <p>{{ analytics.date_from }} - {{ analytics.date_to }}</p>
+  </div>
+  <div class="period-actions">
+    <button hx-get="/analytics?period=week" hx-target="#analytics" class="{% if analytics.period == 'week' %}active{% endif %}">
+      {{ t.last_7_days }}
+    </button>
+    <button hx-get="/analytics?period=month" hx-target="#analytics" class="{% if analytics.period == 'month' %}active{% endif %}">
+      {{ t.month }}
+    </button>
+    <button hx-get="/analytics?period=year" hx-target="#analytics" class="{% if analytics.period == 'year' %}active{% endif %}">
+      {{ t.year }}
+    </button>
+    <button hx-get="/analytics?period=years" hx-target="#analytics" class="{% if analytics.period == 'years' %}active{% endif %}">
+      {{ t.last_5_years }}
+    </button>
+  </div>
+</div>
+
+<form class="custom-period" hx-get="/analytics" hx-target="#analytics">
+  <input type="hidden" name="period" value="custom">
+  <input type="date" name="date_from" value="{{ analytics.date_from }}" aria-label="{{ t.from_date }}">
+  <input type="date" name="date_to" value="{{ analytics.date_to }}" aria-label="{{ t.to_date }}">
+  <button type="submit">{{ t.apply }}</button>
+</form>
+
+<div class="metrics">
+  <div>
+    <span>{{ t.total }}</span>
+    <strong>{{ "%.2f"|format(analytics.summary.total) }} {{ user.currency }}</strong>
+  </div>
+  <div>
+    <span>{{ t.operations }}</span>
+    <strong>{{ analytics.summary.count }}</strong>
+  </div>
+</div>
+
+<div class="chart" aria-label="{{ t.analytics }}">
+  {% for item in analytics.series %}
+  {% set height = 8 if analytics.max_total == 0 else (item.total / analytics.max_total * 140) %}
+  <div class="bar-cell">
+    <div class="bar-value">{{ "%.0f"|format(item.total) }}</div>
+    <div class="bar" style="height: {{ height }}px"></div>
+    <div class="bar-label">
+      {% if analytics.granularity == "year" %}
+        {{ item.bucket.strftime("%Y") }}
+      {% elif analytics.granularity == "month" %}
+        {{ item.bucket.strftime("%b %Y") }}
+      {% else %}
+        {{ item.bucket.strftime("%d %b") }}
+      {% endif %}
+    </div>
+  </div>
+  {% else %}
+  <div class="empty chart-empty">{{ t.no_expenses }}</div>
+  {% endfor %}
+</div>
+
+<div class="category-summary">
+  <h3>{{ t.by_category }}</h3>
+  {% for item in analytics.summary.categories %}
+  <div class="category-row">
+    <span>{{ item.category }}</span>
+    <strong>{{ "%.2f"|format(item.total) }} {{ user.currency }}</strong>
+  </div>
+  {% else %}
+  <p>{{ t.no_expenses }}</p>
+  {% endfor %}
+</div>

@@ -1,0 +1,63 @@
+<table>
+  <thead>
+    <tr>
+      <th>{{ t.date }}</th>
+      <th>{{ t.amount }}</th>
+      <th>{{ t.currency }}</th>
+      <th>{{ t.category }}</th>
+      <th>{{ t.description }}</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for expense in expenses %}
+    <tr>
+      <td colspan="6">
+        <form class="row-form" hx-post="/expenses/{{ expense.id }}" hx-target="#expenses-table">
+          <input
+            type="datetime-local"
+            name="spent_at"
+            value="{{ expense.spent_at.strftime('%Y-%m-%dT%H:%M') }}"
+            aria-label="{{ t.date }}"
+          >
+          <input type="number" step="0.01" min="0.01" name="amount" value="{{ expense.amount }}" aria-label="{{ t.amount }}">
+          <span>{{ expense.currency }}</span>
+          <select name="category_id" aria-label="{{ t.category }}">
+            {% for category in categories %}
+            <option value="{{ category.id }}" {% if category.id == expense.category_id %}selected{% endif %}>
+              {{ category.name }}
+            </option>
+            {% endfor %}
+          </select>
+          <input type="text" name="description" value="{{ expense.description }}" aria-label="{{ t.description }}">
+          <div class="actions">
+            <button
+              type="submit"
+              class="action-button"
+              title="{{ t.save }}"
+              aria-label="{{ t.save }}"
+            >
+              {{ t.save }}
+            </button>
+            <button
+              type="button"
+              class="danger action-button"
+              hx-delete="/expenses/{{ expense.id }}"
+              hx-target="#expenses-table"
+              hx-confirm="{{ t.delete }}?"
+              title="{{ t.delete }}"
+              aria-label="{{ t.delete }}"
+            >
+              {{ t.delete }}
+            </button>
+          </div>
+        </form>
+      </td>
+    </tr>
+    {% else %}
+    <tr>
+      <td colspan="6" class="empty">{{ t.no_expenses }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>

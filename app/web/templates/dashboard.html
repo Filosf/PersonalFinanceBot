@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block content %}
+<header class="topbar">
+  <div>
+    <h1>{{ t.expenses }}</h1>
+    <p>
+      {{ t.signed_in_as }} {{ user.username or ("ID " ~ user.telegram_id) }}
+      - {{ user.currency }} - {{ t.telegram_id }} {{ user.telegram_id }}
+    </p>
+  </div>
+  <div class="top-actions">
+    <form method="post" action="/language" class="language-form">
+      <span>{{ t.language }}</span>
+      <button class="{% if user.locale == 'en' %}active{% endif %}" name="locale" value="en" type="submit">EN</button>
+      <button class="{% if user.locale == 'ru' %}active{% endif %}" name="locale" value="ru" type="submit">RU</button>
+    </form>
+    <form method="post" action="/logout">
+      <button class="ghost" type="submit">{{ t.logout }}</button>
+    </form>
+  </div>
+</header>
+
+<section id="analytics" class="analytics-wrap">
+  {% include "partials/analytics.html" %}
+</section>
+
+<section class="toolbar">
+  <form
+    class="filters"
+    hx-get="/expenses/table"
+    hx-target="#expenses-table"
+    hx-trigger="submit, change delay:250ms from:select, keyup delay:350ms from:input[type='search']"
+  >
+    <input type="date" name="date_from" aria-label="{{ t.from_date }}">
+    <input type="date" name="date_to" aria-label="{{ t.to_date }}">
+    <select name="category_id" aria-label="{{ t.category }}">
+      <option value="">{{ t.all_categories }}</option>
+      {% include "partials/category_options.html" %}
+    </select>
+    <input type="number" step="0.01" name="min_amount" placeholder="{{ t.min }}">
+    <input type="number" step="0.01" name="max_amount" placeholder="{{ t.max }}">
+    <input type="search" name="text" placeholder="{{ t.search_description }}">
+    <button type="submit">{{ t.apply }}</button>
+  </form>
+</section>
+
+<section class="grid">
+  <form
+    class="panel"
+    hx-post="/expenses"
+    hx-target="#expenses-table"
+    hx-on::after-request="if(event.detail.successful) this.reset()"
+  >
+    <h2>{{ t.add_expense }}</h2>
+    <label>
+      {{ t.amount }}
+      <input type="number" name="amount" step="0.01" min="0.01" required>
+    </label>
+    <label>
+      {{ t.category }}
+      <select name="category_id" required id="category-select">
+        {% include "partials/category_options.html" %}
+      </select>
+    </label>
+    <label>
+      {{ t.description }}
+      <input type="text" name="description">
+    </label>
+    <label>
+      {{ t.date }}
+      <input type="datetime-local" name="spent_at">
+    </label>
+    <button type="submit">{{ t.add }}</button>
+  </form>
+
+  <form class="panel" hx-post="/categories" hx-target="#category-select" hx-swap="innerHTML">
+    <h2>{{ t.categories }}</h2>
+    <label>
+      {{ t.new_category }}
+      <input type="text" name="name" maxlength="80" required>
+    </label>
+    <button type="submit">{{ t.create }}</button>
+  </form>
+</section>
+
+<section id="expenses-table" class="table-wrap">
+  {% include "partials/expenses_table.html" %}
+</section>
+{% endblock %}

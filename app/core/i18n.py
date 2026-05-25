@@ -1,0 +1,202 @@
+DEFAULT_LOCALE = "en"
+SUPPORTED_LOCALES = {"en", "ru"}
+
+TRANSLATIONS = {
+    "en": {
+        "access_key": "Access key",
+        "add": "Add",
+        "add_expense": "Add expense",
+        "all_categories": "All categories",
+        "amount": "Amount",
+        "analytics": "Analytics",
+        "apply": "Apply",
+        "by_category": "By category",
+        "categories": "Categories",
+        "category": "Category",
+        "create": "Create",
+        "currency": "Currency",
+        "custom": "Custom",
+        "dashboard": "Dashboard",
+        "date": "Date",
+        "delete": "Delete",
+        "description": "Description",
+        "developer_login": "Developer login",
+        "edit": "Edit",
+        "edit_hint": "Use the web dashboard to edit all fields.",
+        "expense_added": "Expense added",
+        "expense_deleted": "Expense deleted",
+        "expenses": "Expenses",
+        "filters": "Filters",
+        "from_date": "From date",
+        "general": "General",
+        "amount_error": "Could not recognize the amount. Send something like: 250 taxi",
+        "amount_positive_error": "Amount must be greater than zero.",
+        "category_added": "Category added: {name}",
+        "category_deleted": "Category deleted: {name}",
+        "category_not_found": "Category not found",
+        "category_updated": "Category updated",
+        "deleted": "Deleted",
+        "help": (
+            "/start - register\n"
+            "/help - help\n"
+            "/language - choose bot language\n"
+            "/month or /month YYYY-MM - monthly report\n"
+            "/range YYYY-MM-DD YYYY-MM-DD - report for dates\n"
+            "/categories - list categories\n"
+            "/add_category NAME - create category\n"
+            "/web - get a dashboard login link\n"
+            "/last - show last expense\n"
+            "/delete_last - delete last expense\n\n"
+            "To add expense, send: 250 taxi\n"
+            "Create, rename, and delete categories in the web dashboard."
+        ),
+        "language": "Language",
+        "language_updated": "Language updated.",
+        "choose_language": "Choose language:",
+        "last_7_days": "7 days",
+        "last_5_years": "5 years",
+        "login_hint": "Send /web to the Telegram bot and paste the access key here.",
+        "logout": "Logout",
+        "max": "Max",
+        "min": "Min",
+        "month": "Month",
+        "menu_help": "Help",
+        "menu_web": "Website",
+        "new_category": "New category",
+        "no_categories": "No categories",
+        "no_expenses": "No expenses found",
+        "no_expenses_to_delete": "No expenses to delete",
+        "no_expenses_yet": "No expenses yet",
+        "operations": "Operations",
+        "open_dashboard": "Open dashboard",
+        "period": "Period",
+        "save": "Save",
+        "search_description": "Search description",
+        "sign_in": "Sign in",
+        "signed_in_as": "Signed in as",
+        "telegram_id": "Telegram ID",
+        "to_date": "To date",
+        "total": "Total",
+        "valid_for_minutes": "Valid for {minutes} minutes.",
+        "web_key_intro": "Dashboard access key:",
+        "welcome": (
+            "Welcome! I help you track personal expenses.\n\n"
+            "Send an expense as a message: `250 taxi`, `120 food`, or `70`.\n"
+            "Use /month for a monthly summary and /last to see the latest expense.\n"
+            "Use /web to get a dashboard login link for filtering, charts, editing, "
+            "and category management.\n\n"
+            "The permanent buttons below keep website login and help close at hand."
+        ),
+        "usage_add_category": "Usage: /add_category Groceries",
+        "usage_delete_category": "Usage: /delete_category Groceries",
+        "usage_month": "Usage: /month or /month YYYY-MM",
+        "usage_range": "Usage: /range YYYY-MM-DD YYYY-MM-DD",
+        "year": "Year",
+    },
+    "ru": {
+        "access_key": "Ключ доступа",
+        "add": "Добавить",
+        "add_expense": "Добавить расход",
+        "all_categories": "Все категории",
+        "amount": "Сумма",
+        "analytics": "Аналитика",
+        "apply": "Применить",
+        "by_category": "По категориям",
+        "categories": "Категории",
+        "category": "Категория",
+        "create": "Создать",
+        "currency": "Валюта",
+        "custom": "Период",
+        "dashboard": "Панель",
+        "date": "Дата",
+        "delete": "Удалить",
+        "description": "Описание",
+        "developer_login": "Вход для разработки",
+        "edit": "Изменить",
+        "edit_hint": "Изменить все поля можно в web-панели.",
+        "expense_added": "Расход добавлен",
+        "expense_deleted": "Расход удален",
+        "expenses": "Расходы",
+        "filters": "Фильтры",
+        "from_date": "Дата с",
+        "general": "Общее",
+        "amount_error": "Не удалось распознать сумму. Отправьте, например: 250 такси",
+        "amount_positive_error": "Сумма должна быть больше нуля.",
+        "category_added": "Категория добавлена: {name}",
+        "category_deleted": "Категория удалена: {name}",
+        "category_not_found": "Категория не найдена",
+        "category_updated": "Категория обновлена",
+        "deleted": "Удалено",
+        "help": (
+            "/start - регистрация\n"
+            "/help - помощь\n"
+            "/language или /язык - выбрать язык бота\n"
+            "/month или /месяц YYYY-MM - отчет за месяц\n"
+            "/range или /период YYYY-MM-DD YYYY-MM-DD - отчет за период\n"
+            "/categories или /категории - список категорий\n"
+            "/add_category или /добавить_категорию НАЗВАНИЕ - создать категорию\n"
+            "/web или /сайт - ссылка для входа на сайт\n"
+            "/last или /последний - последний расход\n"
+            "/delete_last или /удалить_последний - удалить последний расход\n\n"
+            "Чтобы добавить расход, отправьте: 250 такси\n"
+            "Создание, переименование и удаление категорий выполняется на сайте."
+        ),
+        "language": "Язык",
+        "language_updated": "Язык обновлен.",
+        "choose_language": "Выберите язык:",
+        "last_7_days": "7 дней",
+        "last_5_years": "5 лет",
+        "login_hint": "Отправьте /web боту в Telegram и вставьте ключ доступа здесь.",
+        "logout": "Выйти",
+        "max": "Макс.",
+        "min": "Мин.",
+        "month": "Месяц",
+        "menu_help": "Помощь",
+        "menu_web": "Сайт",
+        "new_category": "Новая категория",
+        "no_categories": "Категорий нет",
+        "no_expenses": "Расходов не найдено",
+        "no_expenses_to_delete": "Нет расходов для удаления",
+        "no_expenses_yet": "Расходов пока нет",
+        "operations": "Операций",
+        "open_dashboard": "Открыть панель",
+        "period": "Период",
+        "save": "Сохранить",
+        "search_description": "Поиск по описанию",
+        "sign_in": "Войти",
+        "signed_in_as": "Вошли как",
+        "telegram_id": "Telegram ID",
+        "to_date": "Дата по",
+        "total": "Итого",
+        "valid_for_minutes": "Действует {minutes} минут.",
+        "web_key_intro": "Ключ доступа к панели:",
+        "welcome": (
+            "Добро пожаловать! Я помогаю вести учет личных расходов.\n\n"
+            "Отправьте расход сообщением: `250 такси`, `120 еда` или `70`.\n"
+            "Команда /month покажет отчет за месяц, а /last - последний расход.\n"
+            "Команда /web выдаст ссылку для входа на сайт, где есть фильтры, "
+            "графики, редактирование и управление категориями.\n\n"
+            "Постоянные кнопки ниже помогут быстро открыть сайт или помощь."
+        ),
+        "usage_add_category": "Использование: /add_category Продукты",
+        "usage_delete_category": "Использование: /delete_category Продукты",
+        "usage_month": "Использование: /month или /month YYYY-MM",
+        "usage_range": "Использование: /range YYYY-MM-DD YYYY-MM-DD",
+        "year": "Год",
+    },
+}
+
+
+def normalize_locale(locale: str | None) -> str:
+    if locale and locale.lower().startswith("ru"):
+        return "ru"
+    return DEFAULT_LOCALE
+
+
+def labels(locale: str | None) -> dict[str, str]:
+    return TRANSLATIONS[normalize_locale(locale)]
+
+
+def tr(locale: str | None, key: str, **kwargs) -> str:
+    text = labels(locale).get(key, TRANSLATIONS[DEFAULT_LOCALE].get(key, key))
+    return text.format(**kwargs) if kwargs else text
