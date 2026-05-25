@@ -25,7 +25,7 @@
           <select name="category_id" aria-label="{{ t.category }}">
             {% for category in categories %}
             <option value="{{ category.id }}" {% if category.id == expense.category_id %}selected{% endif %}>
-              {{ category.name }}
+              {{ category.name|category_label(user.locale) }}
             </option>
             {% endfor %}
           </select>

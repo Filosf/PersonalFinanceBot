@@ -1,5 +1,14 @@
 DEFAULT_LOCALE = "en"
 SUPPORTED_LOCALES = {"en", "ru"}
+BASE_CATEGORY_TRANSLATIONS = {
+    "ru": {
+        "Food": "Еда",
+        "Taxi": "Такси",
+        "Rent": "Аренда",
+        "Entertainment": "Развлечения",
+        "General": "Общее",
+    }
+}
 
 TRANSLATIONS = {
     "en": {
@@ -200,3 +209,7 @@ def labels(locale: str | None) -> dict[str, str]:
 def tr(locale: str | None, key: str, **kwargs) -> str:
     text = labels(locale).get(key, TRANSLATIONS[DEFAULT_LOCALE].get(key, key))
     return text.format(**kwargs) if kwargs else text
+
+
+def category_label(name: str, locale: str | None) -> str:
+    return BASE_CATEGORY_TRANSLATIONS.get(normalize_locale(locale), {}).get(name, name)

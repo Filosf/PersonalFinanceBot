@@ -62,7 +62,7 @@
   <h3>{{ t.by_category }}</h3>
   {% for item in analytics.summary.categories %}
   <div class="category-row">
-    <span>{{ item.category }}</span>
+    <span>{{ item.category|category_label(user.locale) }}</span>
     <strong>{{ "%.2f"|format(item.total) }} {{ user.currency }}</strong>
   </div>
   {% else %}

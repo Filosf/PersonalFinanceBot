@@ -1,4 +1,5 @@
 import asyncio
+import os
 import random
 from datetime import UTC, datetime, time, timedelta
 from decimal import Decimal
@@ -11,9 +12,9 @@ from app.services.categories import CategoryService
 from app.services.expenses import ExpenseService
 from app.services.users import UserService
 
-TELEGRAM_ID = 122078682
-USERNAME = "Filosf"
-CURRENCY = "ILS"
+TELEGRAM_ID = int(os.environ["SEED_TELEGRAM_ID"])
+USERNAME = os.environ.get("SEED_USERNAME", "DemoUser")
+CURRENCY = os.environ.get("SEED_CURRENCY", "ILS")
 SEED_PREFIX = "[seed]"
 
 EXPENSE_TEMPLATES = [
@@ -29,7 +30,7 @@ EXPENSE_TEMPLATES = [
 
 
 async def main() -> None:
-    random.seed(122078682)
+    random.seed(TELEGRAM_ID)
     today = datetime.now(UTC).date()
     first_this_month = today.replace(day=1)
     if first_this_month.month == 1:

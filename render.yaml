@@ -27,3 +27,5 @@ services:
         sync: false
       - key: DATABASE_URL
         sync: false
+      - key: ADMIN_IDS
+        sync: false

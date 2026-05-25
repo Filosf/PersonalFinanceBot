@@ -18,8 +18,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.bot.keyboards import expense_actions
 from app.core.config import get_settings
 from app.core.i18n import tr
+from app.core.runtime_state import get_last_errors
 from app.db.session import SessionLocal
 from app.services.access_tokens import create_access_token
+from app.services.admin import AdminService
 from app.services.categories import CategoryService
 from app.services.expenses import ExpenseService
 from app.services.parsing import parse_expense_text
@@ -291,6 +293,79 @@ async def edit_hint(callback: CallbackQuery) -> None:
     await callback.answer(tr(_telegram_locale(callback), "edit_hint"), show_alert=True)
 
 
+@router.message(Command("admin_stats"))
+async def admin_stats(message: Message) -> None:
+    if not _is_admin(message):
+        return
+    async with SessionLocal() as session:
+        stats = await AdminService(session).stats()
+    await message.answer(
+        "Admin stats\n"
+        f"Users: {stats['users']}\n"
+        f"Categories: {stats['categories']}\n"
+        f"Active expenses: {stats['expenses']}\n"
+        f"Deleted expenses: {stats['deleted_expenses']}\n"
+        f"Total amount: {stats['total_amount']}"
+    )
+
+
+@router.message(Command("admin_users"))
+async def admin_users(message: Message) -> None:
+    if not _is_admin(message):
+        return
+    async with SessionLocal() as session:
+        users = await AdminService(session).users()
+    if not users:
+        await message.answer("No users found.")
+        return
+    lines = ["Admin users"]
+    lines.extend(
+        f"{user.id}: @{user.username or '-'} | tg={user.telegram_id} | "
+        f"{user.currency} | {user.locale}"
+        for user in users
+    )
+    await message.answer("\n".join(lines))
+
+
+@router.message(Command("admin_logs"))
+async def admin_logs(message: Message) -> None:
+    if not _is_admin(message):
+        return
+    await message.answer(
+        "Logs are emitted to stdout as structured JSON.\n"
+        "On Render: open the service dashboard -> Logs."
+    )
+
+
+@router.message(Command("admin_last_errors"))
+async def admin_last_errors(message: Message) -> None:
+    if not _is_admin(message):
+        return
+    errors = get_last_errors()
+    if not errors:
+        await message.answer("No captured runtime errors.")
+        return
+    lines = ["Last errors"]
+    for error in errors:
+        lines.append(
+            f"{error['at']} | {error['source']} | {error['type']}: {error['message']}"
+        )
+    await message.answer("\n".join(lines))
+
+
+@router.message(Command("admin_db_health"))
+async def admin_db_health(message: Message) -> None:
+    if not _is_admin(message):
+        return
+    try:
+        async with SessionLocal() as session:
+            health = await AdminService(session).db_health()
+    except Exception as exc:
+        await message.answer(f"DB health: failed\n{exc.__class__.__name__}: {exc}")
+        return
+    await message.answer(f"DB health: {health['status']}\nUsers: {health['users']}")
+
+
 @router.message(F.text)
 async def add_expense(message: Message) -> None:
     try:
@@ -422,3 +497,8 @@ def _is_public_http_url(url: str) -> bool:
         return False
     hostname = (parsed.hostname or "").lower()
     return hostname not in {"localhost", "127.0.0.1", "::1"}
+
+
+def _is_admin(message: Message) -> bool:
+    user_id = message.from_user.id if message.from_user else None
+    return bool(user_id and user_id in get_settings().admin_id_set)

@@ -4,6 +4,7 @@ from fastapi import APIRouter, HTTPException, Request, status
 
 from app.bot.handlers import router as bot_router
 from app.core.config import get_settings
+from app.core.runtime_state import record_error
 
 router = APIRouter()
 dispatcher = Dispatcher()
@@ -22,8 +23,12 @@ async def telegram_webhook(request: Request) -> dict[str, bool]:
         if secret != settings.telegram_webhook_secret:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
 
-    update = Update.model_validate(await request.json(), context={"bot": bot})
-    await dispatcher.feed_update(bot, update)
+    try:
+        update = Update.model_validate(await request.json(), context={"bot": bot})
+        await dispatcher.feed_update(bot, update)
+    except Exception as exc:
+        record_error("telegram_webhook", exc)
+        raise
     return {"ok": True}
 
 

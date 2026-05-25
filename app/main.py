@@ -9,7 +9,9 @@ from app.api.routes import router as api_router
 from app.bot.webhook import router as telegram_webhook_router
 from app.bot.webhook import setup_telegram_webhook
 from app.core.config import get_settings
+from app.core.i18n import category_label
 from app.core.logging import configure_logging
+from app.core.runtime_state import record_error
 from app.web.routes import router as web_router
 
 configure_logging()
@@ -35,7 +37,17 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Personal Finance Bot Dashboard", lifespan=lifespan)
 app.state.templates = Jinja2Templates(directory="app/web/templates")
+app.state.templates.env.filters["category_label"] = category_label
 app.mount("/static", StaticFiles(directory="app/web/static"), name="static")
 app.include_router(api_router)
 app.include_router(telegram_webhook_router)
 app.include_router(web_router)
+
+
+@app.middleware("http")
+async def capture_errors(request, call_next):
+    try:
+        return await call_next(request)
+    except Exception as exc:
+        record_error(f"{request.method} {request.url.path}", exc)
+        raise

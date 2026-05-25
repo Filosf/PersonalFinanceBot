@@ -119,9 +119,12 @@ python -m alembic upgrade head
 
 ## Demo data
 
-Seed two months of demo expenses for `Filosf`, `Telegram ID 122078682`, `ILS`:
+Seed two months of demo expenses for a chosen Telegram user:
 
 ```powershell
+$env:SEED_TELEGRAM_ID="123456789"
+$env:SEED_USERNAME="DemoUser"
+$env:SEED_CURRENCY="ILS"
 python -m scripts.seed_filosf_two_months
 ```
 
@@ -155,7 +158,20 @@ TELEGRAM_WEBHOOK_SECRET=random-long-secret
 APP_SECRET=random-long-secret
 DEFAULT_CURRENCY=ILS
 DEFAULT_TIMEZONE=Asia/Jerusalem
+ADMIN_IDS=comma-separated-telegram-admin-ids
 ```
+
+Admin-only Telegram commands:
+
+```text
+/admin_stats
+/admin_users
+/admin_logs
+/admin_last_errors
+/admin_db_health
+```
+
+Only Telegram IDs listed in `ADMIN_IDS` can use these commands.
 
 Render automatically provides `RENDER_EXTERNAL_URL`; the app uses it for Telegram webhook and dashboard login links.
 

@@ -162,6 +162,7 @@ async def expenses_table(
         {
             "request": request,
             "t": labels(user.locale),
+            "user": user,
             "expenses": expenses,
             "categories": categories,
         },
@@ -245,7 +246,9 @@ async def create_category(
     await session.commit()
     categories = await CategoryService(session).list_categories(user.id)
     return request.app.state.templates.TemplateResponse(
-        request, "partials/category_options.html", {"request": request, "categories": categories}
+        request,
+        "partials/category_options.html",
+        {"request": request, "user": user, "categories": categories},
     )
 
 
