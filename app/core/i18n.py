@@ -28,6 +28,15 @@ TRANSLATIONS = {
         ),
         "apply": "Apply",
         "by_category": "By category",
+        "budget_alert": (
+            "Budget alert: {name} reached {percent:.0f}%\n"
+            "Spent: {spent:.2f} of {amount:.2f} {currency}\n"
+            "Remaining: {remaining:.2f} {currency}"
+        ),
+        "budget_report_empty": "No budgets are set for this month.",
+        "budget_report_title": "Budgets for {month}",
+        "budgets": "Budgets",
+        "budgets_saved": "Budgets saved.",
         "categories": "Categories",
         "category": "Category",
         "create": "Create",
@@ -50,8 +59,11 @@ TRANSLATIONS = {
         "amount_positive_error": "Amount must be greater than zero.",
         "category_added": "Category added: {name}",
         "category_deleted": "Category deleted: {name}",
+        "category_created": "Category created.",
+        "category_renamed": "Category renamed.",
         "category_not_found": "Category not found",
         "category_updated": "Category updated",
+        "custom_categories": "Custom categories",
         "deleted": "Deleted",
         "help": (
             "/start - register\n"
@@ -62,6 +74,7 @@ TRANSLATIONS = {
             "/categories - list categories\n"
             "/add_category NAME - create category\n"
             "/web - get a dashboard login link\n"
+            "/budgets - monthly budget status\n"
             "/last - show last expense\n"
             "/delete_last - delete last expense\n\n"
             "To add expense, send: 250 taxi\n"
@@ -77,6 +90,7 @@ TRANSLATIONS = {
         "max": "Max",
         "min": "Min",
         "month": "Month",
+        "month_category_report": "Categories this month",
         "menu_help": "Help",
         "menu_web": "Website",
         "new_category": "New category",
@@ -87,6 +101,8 @@ TRANSLATIONS = {
         "operations": "Operations",
         "open_dashboard": "Open dashboard",
         "period": "Period",
+        "rename": "Rename",
+        "remaining": "left",
         "save": "Save",
         "search_description": "Search description",
         "sign_in": "Sign in",
@@ -94,6 +110,7 @@ TRANSLATIONS = {
         "telegram_id": "Telegram ID",
         "to_date": "To date",
         "total": "Total",
+        "total_budget": "Total monthly budget",
         "valid_for_minutes": "Valid for {minutes} minutes.",
         "web_key_intro": "Dashboard access key:",
         "welcome": (
@@ -127,6 +144,15 @@ TRANSLATIONS = {
         ),
         "apply": "Применить",
         "by_category": "По категориям",
+        "budget_alert": (
+            "Предупреждение по бюджету: {name} достиг {percent:.0f}%\n"
+            "Потрачено: {spent:.2f} из {amount:.2f} {currency}\n"
+            "Осталось: {remaining:.2f} {currency}"
+        ),
+        "budget_report_empty": "На этот месяц бюджеты не настроены.",
+        "budget_report_title": "Бюджеты на {month}",
+        "budgets": "Бюджеты",
+        "budgets_saved": "Бюджеты сохранены.",
         "categories": "Категории",
         "category": "Категория",
         "create": "Создать",
@@ -149,8 +175,11 @@ TRANSLATIONS = {
         "amount_positive_error": "Сумма должна быть больше нуля.",
         "category_added": "Категория добавлена: {name}",
         "category_deleted": "Категория удалена: {name}",
+        "category_created": "Категория создана.",
+        "category_renamed": "Категория переименована.",
         "category_not_found": "Категория не найдена",
         "category_updated": "Категория обновлена",
+        "custom_categories": "Пользовательские категории",
         "deleted": "Удалено",
         "help": (
             "/start - регистрация\n"
@@ -161,6 +190,7 @@ TRANSLATIONS = {
             "/categories или /категории - список категорий\n"
             "/add_category или /добавить_категорию НАЗВАНИЕ - создать категорию\n"
             "/web или /сайт - ссылка для входа на сайт\n"
+            "/budgets или /бюджеты - состояние бюджетов на месяц\n"
             "/last или /последний - последний расход\n"
             "/delete_last или /удалить_последний - удалить последний расход\n\n"
             "Чтобы добавить расход, отправьте: 250 такси\n"
@@ -176,6 +206,7 @@ TRANSLATIONS = {
         "max": "Макс.",
         "min": "Мин.",
         "month": "Месяц",
+        "month_category_report": "Категории за месяц",
         "menu_help": "Помощь",
         "menu_web": "Сайт",
         "new_category": "Новая категория",
@@ -186,6 +217,8 @@ TRANSLATIONS = {
         "operations": "Операций",
         "open_dashboard": "Открыть панель",
         "period": "Период",
+        "rename": "Переименовать",
+        "remaining": "осталось",
         "save": "Сохранить",
         "search_description": "Поиск по описанию",
         "sign_in": "Войти",
@@ -193,6 +226,7 @@ TRANSLATIONS = {
         "telegram_id": "Telegram ID",
         "to_date": "Дата по",
         "total": "Итого",
+        "total_budget": "Общий бюджет на месяц",
         "valid_for_minutes": "Действует {minutes} минут.",
         "web_key_intro": "Ключ доступа к панели:",
         "welcome": (

@@ -1,0 +1,41 @@
+<section id="budgets-panel" class="panel">
+  <h2>{{ t.budgets }}</h2>
+
+  {% if budget_message %}
+  <p class="status-message">{{ budget_message }}</p>
+  {% endif %}
+
+  <form hx-post="/budgets" hx-target="#budgets-panel" hx-swap="outerHTML">
+    <label>
+      {{ t.month }}
+      <input type="month" name="month" value="{{ budgets.month[:7] }}" required>
+    </label>
+    <label>
+      {{ t.total_budget }}
+      <input
+        type="number"
+        name="total_budget"
+        step="0.01"
+        min="0"
+        value="{% if budgets.total %}{{ budgets.total.amount }}{% endif %}"
+      >
+    </label>
+
+    <div class="budget-list">
+      {% for row in budgets.category_rows %}
+      <label>
+        {{ row.category.name|category_label(user.locale) }}
+        <input
+          type="number"
+          name="category_budget_{{ row.category.id }}"
+          step="0.01"
+          min="0"
+          value="{% if row.budget %}{{ row.budget.amount }}{% endif %}"
+        >
+      </label>
+      {% endfor %}
+    </div>
+
+    <button type="submit">{{ t.save }}</button>
+  </form>
+</section>

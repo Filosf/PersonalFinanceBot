@@ -1,7 +1,18 @@
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal
 
-from sqlalchemy import BigInteger, DateTime, ForeignKey, Numeric, String, UniqueConstraint, func
+from sqlalchemy import (
+    BigInteger,
+    Date,
+    DateTime,
+    ForeignKey,
+    Index,
+    Numeric,
+    String,
+    UniqueConstraint,
+    func,
+    text,
+)
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 
@@ -35,6 +46,7 @@ class Category(Base):
 
     user: Mapped[User] = relationship(back_populates="categories")
     expenses: Mapped[list["Expense"]] = relationship(back_populates="category")
+    budgets: Mapped[list["MonthlyBudget"]] = relationship(back_populates="category")
 
 
 class Expense(Base):
@@ -55,3 +67,39 @@ class Expense(Base):
 
     user: Mapped[User] = relationship(back_populates="expenses")
     category: Mapped[Category] = relationship(back_populates="expenses")
+
+
+class MonthlyBudget(Base):
+    __tablename__ = "monthly_budgets"
+    __table_args__ = (
+        Index(
+            "uq_monthly_budgets_user_month_total",
+            "user_id",
+            "month_start",
+            unique=True,
+            postgresql_where=text("category_id IS NULL"),
+        ),
+        Index(
+            "uq_monthly_budgets_user_month_category",
+            "user_id",
+            "month_start",
+            "category_id",
+            unique=True,
+            postgresql_where=text("category_id IS NOT NULL"),
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    category_id: Mapped[int | None] = mapped_column(
+        ForeignKey("categories.id", ondelete="CASCADE"), index=True
+    )
+    month_start: Mapped[date] = mapped_column(Date)
+    amount: Mapped[Decimal] = mapped_column(Numeric(12, 2))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+    user: Mapped[User] = relationship()
+    category: Mapped[Category | None] = relationship(back_populates="budgets")

@@ -9,7 +9,9 @@ from app.core.i18n import labels, normalize_locale
 from app.db.models import User
 from app.db.session import get_session
 from app.services.access_tokens import AccessTokenError, verify_access_token
-from app.services.categories import CategoryService
+from app.services.budgets import BudgetService, month_bounds, month_start_from_iso
+from app.services.categories import CategoryService, is_default_category
+from app.services.defaults import DEFAULT_CATEGORIES
 from app.services.expenses import ExpenseFilters, ExpenseService
 from app.services.users import UserService
 
@@ -37,6 +39,7 @@ async def index(
     categories = await CategoryService(session).list_categories(user.id)
     expenses = await ExpenseService(session).list_expenses(user.id)
     analytics = await _analytics_context(user, session, period="month")
+    budgets = await _budgets_context(user, session)
     return request.app.state.templates.TemplateResponse(
         request,
         "dashboard.html",
@@ -45,8 +48,11 @@ async def index(
             "user": user,
             "t": labels(user.locale),
             "categories": categories,
+            "custom_categories": _custom_categories(categories),
+            "default_categories": DEFAULT_CATEGORIES,
             "expenses": expenses,
             "analytics": analytics,
+            "budgets": budgets,
         },
     )
 
@@ -194,6 +200,47 @@ async def create_expense(
     return await expenses_table(request, user=user, session=session)
 
 
+@router.post("/budgets", response_class=HTMLResponse)
+async def save_budgets(
+    request: Request,
+    month: str = Form(),
+    total_budget: str = Form(default=""),
+    user: User | None = Depends(web_user),
+    session: AsyncSession = Depends(get_session),
+) -> HTMLResponse:
+    if not user:
+        raise HTTPException(status_code=401)
+
+    form = await request.form()
+    month_start = month_start_from_iso(month)
+    service = BudgetService(session)
+    await service.set_month_budget(
+        user.id, month_start, _parse_decimal(total_budget), category_id=None
+    )
+    categories = await CategoryService(session).list_categories(user.id)
+    for category in categories:
+        await service.set_month_budget(
+            user.id,
+            month_start,
+            _parse_decimal(str(form.get(f"category_budget_{category.id}", ""))),
+            category_id=category.id,
+        )
+    await session.commit()
+    budgets = await _budgets_context(user, session, month_start.isoformat())
+    return request.app.state.templates.TemplateResponse(
+        request,
+        "partials/budgets_panel.html",
+        {
+            "request": request,
+            "user": user,
+            "t": labels(user.locale),
+            "categories": categories,
+            "budgets": budgets,
+            "budget_message": labels(user.locale)["budgets_saved"],
+        },
+    )
+
+
 @router.post("/expenses/{expense_id}", response_class=HTMLResponse)
 async def update_expense(
     request: Request,
@@ -244,12 +291,58 @@ async def create_category(
         raise HTTPException(status_code=401)
     await CategoryService(session).get_or_create(user.id, name)
     await session.commit()
+    return await _categories_panel_response(
+        request, user, session, labels(user.locale)["category_created"]
+    )
+
+
+@router.post("/categories/{category_id}", response_class=HTMLResponse)
+async def rename_category(
+    request: Request,
+    category_id: int,
+    name: str = Form(),
+    user: User | None = Depends(web_user),
+    session: AsyncSession = Depends(get_session),
+) -> HTMLResponse:
+    if not user:
+        raise HTTPException(status_code=401)
+    try:
+        await CategoryService(session).rename(user.id, category_id, name)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except PermissionError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    await session.commit()
+    return await _categories_panel_response(
+        request, user, session, labels(user.locale)["category_renamed"]
+    )
+
+
+async def _categories_panel_response(
+    request: Request,
+    user: User,
+    session: AsyncSession,
+    message: str | None = None,
+) -> HTMLResponse:
     categories = await CategoryService(session).list_categories(user.id)
     return request.app.state.templates.TemplateResponse(
         request,
-        "partials/category_options.html",
-        {"request": request, "user": user, "categories": categories},
+        "partials/categories_panel.html",
+        {
+            "request": request,
+            "user": user,
+            "t": labels(user.locale),
+            "categories": categories,
+            "custom_categories": _custom_categories(categories),
+            "default_categories": DEFAULT_CATEGORIES,
+            "category_message": message,
+            "refresh_selects": True,
+        },
     )
+
+
+def _custom_categories(categories: list) -> list:
+    return [category for category in categories if not is_default_category(category.name)]
 
 
 def _parse_date(value: str | None, end_of_day: bool = False) -> datetime | None:
@@ -287,6 +380,9 @@ async def _analytics_context(
     service = ExpenseService(session)
     summary = await service.summary(user.id, start_at, end_at)
     series = await service.time_series(user.id, start_at, end_at, granularity)
+    month_start = datetime.now(UTC).date().replace(day=1)
+    month_start_at, month_end_at = month_bounds(month_start)
+    month_summary = await service.summary(user.id, month_start_at, month_end_at)
     max_total = max((Decimal(item["total"]) for item in series), default=Decimal("0"))
     return {
         "period": period,
@@ -294,6 +390,8 @@ async def _analytics_context(
         "date_to": (end_at - timedelta(days=1)).date().isoformat(),
         "granularity": granularity,
         "summary": summary,
+        "month_summary": month_summary,
+        "month_pie": _pie_segments(month_summary["categories"]),
         "series": series,
         "max_total": max_total,
     }
@@ -330,3 +428,49 @@ def _period_range(
         datetime.combine(end, datetime.min.time(), tzinfo=UTC),
         granularity,
     )
+
+
+async def _budgets_context(
+    user: User, session: AsyncSession, month: str | None = None
+) -> dict:
+    month_start = month_start_from_iso(month)
+    categories = await CategoryService(session).list_categories(user.id)
+    budget_rows = await BudgetService(session).report(user.id, month_start)
+    by_category = {row.category_id: row for row in budget_rows}
+    total = by_category.get(None)
+    return {
+        "month": month_start.isoformat(),
+        "total": total,
+        "category_rows": [
+            {
+                "category": category,
+                "budget": by_category.get(category.id),
+            }
+            for category in categories
+        ],
+    }
+
+
+def _pie_segments(categories: list[dict]) -> list[dict]:
+    total = sum((Decimal(item["total"]) for item in categories), Decimal("0"))
+    if total <= 0:
+        return []
+    colors = ("#0f766e", "#2563eb", "#d97706", "#7c3aed", "#be123c", "#4d7c0f", "#0f172a")
+    cursor = Decimal("0")
+    segments = []
+    for index, item in enumerate(categories):
+        amount = Decimal(item["total"])
+        percent = (amount / total) * Decimal("100")
+        start = cursor
+        cursor += percent
+        segments.append(
+            {
+                "category": item["category"],
+                "total": amount,
+                "percent": percent,
+                "start": start,
+                "end": cursor,
+                "color": colors[index % len(colors)],
+            }
+        )
+    return segments

@@ -4,9 +4,6 @@
     <p>{{ analytics.date_from }} - {{ analytics.date_to }}</p>
   </div>
   <div class="period-actions">
-    <button hx-get="/analytics?period=week" hx-target="#analytics" class="{% if analytics.period == 'week' %}active{% endif %}">
-      {{ t.last_7_days }}
-    </button>
     <button hx-get="/analytics?period=month" hx-target="#analytics" class="{% if analytics.period == 'month' %}active{% endif %}">
       {{ t.month }}
     </button>
@@ -56,6 +53,28 @@
   {% else %}
   <div class="empty chart-empty">{{ t.no_expenses }}</div>
   {% endfor %}
+</div>
+
+<div class="monthly-category-chart">
+  <div
+    class="pie-chart"
+    aria-label="{{ t.month_category_report }}"
+    {% if analytics.month_pie %}
+    style="background: conic-gradient({% for item in analytics.month_pie %}{{ item.color }} {{ '%.2f'|format(item.start) }}% {{ '%.2f'|format(item.end) }}%{% if not loop.last %}, {% endif %}{% endfor %});"
+    {% endif %}
+  ></div>
+  <div class="pie-legend">
+    <h3>{{ t.month_category_report }}</h3>
+    {% for item in analytics.month_pie %}
+    <div class="legend-row">
+      <span class="legend-swatch" style="background: {{ item.color }}"></span>
+      <span>{{ item.category|category_label(user.locale) }}</span>
+      <strong>{{ "%.2f"|format(item.total) }} {{ user.currency }}</strong>
+    </div>
+    {% else %}
+    <p>{{ t.no_expenses }}</p>
+    {% endfor %}
+  </div>
 </div>
 
 <div class="category-summary">

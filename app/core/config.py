@@ -18,7 +18,7 @@ class Settings(BaseSettings):
     default_timezone: str = "Asia/Jerusalem"
     log_level: str = "INFO"
 
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
+    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
     @property
     def admin_id_set(self) -> set[int]:

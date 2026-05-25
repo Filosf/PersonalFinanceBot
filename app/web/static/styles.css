@@ -127,7 +127,8 @@ p {
 .analytics-head,
 .custom-period,
 .metrics,
-.category-row {
+.category-row,
+.legend-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -210,6 +211,45 @@ p {
   margin-top: 14px;
 }
 
+.monthly-category-chart {
+  display: grid;
+  grid-template-columns: 190px minmax(0, 1fr);
+  gap: 18px;
+  align-items: center;
+  border-bottom: 1px solid var(--line);
+  padding: 16px 0;
+}
+
+.pie-chart {
+  width: 180px;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: #eef2f6;
+  border: 1px solid var(--line);
+}
+
+.pie-legend h3 {
+  font-size: 15px;
+  margin: 0 0 8px;
+}
+
+.legend-row {
+  justify-content: flex-start;
+  border-top: 1px solid var(--line);
+  padding: 7px 0;
+}
+
+.legend-row strong {
+  margin-left: auto;
+}
+
+.legend-swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  flex: 0 0 12px;
+}
+
 .category-summary h3 {
   font-size: 15px;
   margin: 0 0 8px;
@@ -237,6 +277,55 @@ p {
 
 .panel {
   padding: 16px;
+}
+
+.status-message {
+  display: inline-block;
+  margin: 0 0 12px;
+  color: #0f5132;
+  background: #e7f6ee;
+  border: 1px solid #b7e2c7;
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-size: 13px;
+}
+
+.category-editor {
+  margin-top: 18px;
+}
+
+.category-editor h3 {
+  margin: 0 0 10px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.category-editor-list {
+  display: grid;
+  gap: 8px;
+}
+
+.category-edit-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) max-content;
+  gap: 8px;
+  align-items: center;
+}
+
+.category-edit-row button {
+  white-space: nowrap;
+}
+
+.budget-list {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.empty-inline {
+  color: var(--muted);
+  font-size: 13px;
 }
 
 label {
@@ -355,6 +444,7 @@ td {
   .topbar,
   .top-actions,
   .analytics-head,
+  .monthly-category-chart,
   .custom-period,
   .metrics,
   .grid,
@@ -373,6 +463,14 @@ td {
   .metrics {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .category-edit-row {
+    grid-template-columns: 1fr;
+  }
+
+  .budget-list {
+    grid-template-columns: 1fr;
   }
 
   .row-form {

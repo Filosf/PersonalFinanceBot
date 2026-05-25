@@ -33,7 +33,7 @@
   >
     <input type="date" name="date_from" aria-label="{{ t.from_date }}">
     <input type="date" name="date_to" aria-label="{{ t.to_date }}">
-    <select name="category_id" aria-label="{{ t.category }}">
+    <select id="filter-category-select" name="category_id" aria-label="{{ t.category }}">
       <option value="">{{ t.all_categories }}</option>
       {% include "partials/category_options.html" %}
     </select>
@@ -73,14 +73,9 @@
     <button type="submit">{{ t.add }}</button>
   </form>
 
-  <form class="panel" hx-post="/categories" hx-target="#category-select" hx-swap="innerHTML">
-    <h2>{{ t.categories }}</h2>
-    <label>
-      {{ t.new_category }}
-      <input type="text" name="name" maxlength="80" required>
-    </label>
-    <button type="submit">{{ t.create }}</button>
-  </form>
+  {% include "partials/categories_panel.html" %}
+
+  {% include "partials/budgets_panel.html" %}
 </section>
 
 <section id="expenses-table" class="table-wrap">

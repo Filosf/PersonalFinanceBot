@@ -50,6 +50,8 @@ async def update_category(
 ):
     try:
         category = await CategoryService(session).rename(user.id, category_id, payload.name)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
     except PermissionError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     await session.commit()

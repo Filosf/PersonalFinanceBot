@@ -4,8 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import get_settings
 from app.core.i18n import normalize_locale
 from app.db.models import Category, User
-
-DEFAULT_CATEGORIES = ("Food", "Taxi", "Rent", "Entertainment", "General")
+from app.services.defaults import DEFAULT_CATEGORIES
 
 
 class UserService:

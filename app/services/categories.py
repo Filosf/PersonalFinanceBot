@@ -2,6 +2,11 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.models import Category
+from app.services.defaults import DEFAULT_CATEGORIES
+
+
+def is_default_category(name: str) -> bool:
+    return name in DEFAULT_CATEGORIES
 
 
 class CategoryService:
@@ -31,6 +36,8 @@ class CategoryService:
 
     async def rename(self, user_id: int, category_id: int, name: str) -> Category:
         category = await self.require_owned(user_id, category_id)
+        if is_default_category(category.name):
+            raise ValueError("Default categories cannot be renamed")
         category.name = name.strip()
         await self.session.flush()
         return category

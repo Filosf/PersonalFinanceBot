@@ -1,0 +1,45 @@
+<section id="categories-panel" class="panel">
+  <h2>{{ t.categories }}</h2>
+
+  {% if category_message %}
+  <p class="status-message">{{ category_message }}</p>
+  {% endif %}
+
+  <form hx-post="/categories" hx-target="#categories-panel" hx-swap="outerHTML">
+    <label>
+      {{ t.new_category }}
+      <input type="text" name="name" maxlength="80" required>
+    </label>
+    <button type="submit">{{ t.create }}</button>
+  </form>
+
+  <div class="category-editor">
+    <h3>{{ t.custom_categories }}</h3>
+    <div class="category-editor-list">
+      {% for category in custom_categories %}
+      <form
+        class="category-edit-row"
+        hx-post="/categories/{{ category.id }}"
+        hx-target="#categories-panel"
+        hx-swap="outerHTML"
+      >
+        <input type="text" name="name" value="{{ category.name }}" maxlength="80" required>
+        <button type="submit">{{ t.rename }}</button>
+      </form>
+      {% else %}
+      <p class="empty-inline">{{ t.no_categories }}</p>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+{% if refresh_selects %}
+<select id="category-select" name="category_id" required hx-swap-oob="true">
+  {% include "partials/category_options.html" %}
+</select>
+
+<select id="filter-category-select" name="category_id" aria-label="{{ t.category }}" hx-swap-oob="true">
+  <option value="">{{ t.all_categories }}</option>
+  {% include "partials/category_options.html" %}
+</select>
+{% endif %}

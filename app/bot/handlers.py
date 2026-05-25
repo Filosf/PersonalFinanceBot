@@ -22,6 +22,7 @@ from app.core.runtime_state import get_last_errors
 from app.db.session import SessionLocal
 from app.services.access_tokens import create_access_token
 from app.services.admin import AdminService
+from app.services.budgets import BudgetService, month_start_from_iso
 from app.services.categories import CategoryService
 from app.services.expenses import ExpenseService
 from app.services.parsing import parse_expense_text
@@ -238,6 +239,19 @@ async def delete_last_ru(message: Message) -> None:
     await delete_last(message)
 
 
+@router.message(Command("budgets"))
+async def budgets(message: Message) -> None:
+    async with SessionLocal() as session:
+        user = await _ensure_user(session, message)
+        report = await BudgetService(session).report(user.id, month_start_from_iso())
+    await message.answer(_format_budget_report(report, user.locale, user.currency))
+
+
+@router.message(F.text.startswith("/бюджеты"))
+async def budgets_ru(message: Message) -> None:
+    await budgets(message)
+
+
 @router.callback_query(F.data.startswith("cat:"))
 async def set_category(callback: CallbackQuery) -> None:
     _, expense_id, category_id = callback.data.split(":")
@@ -382,12 +396,15 @@ async def add_expense(message: Message) -> None:
             description=description,
             currency=user.currency,
         )
+        budget_warnings = await BudgetService(session).warnings_for_expense(expense)
         categories = await CategoryService(session).list_categories(user.id)
         await session.commit()
-    await message.answer(
-        _format_added(expense, user.locale),
-        reply_markup=expense_actions(expense, categories, user.locale),
-    )
+    text = _format_added(expense, user.locale)
+    if budget_warnings:
+        text = f"{text}\n\n" + "\n\n".join(
+            _format_budget_alert(line, user.locale, user.currency) for line in budget_warnings
+        )
+    await message.answer(text, reply_markup=expense_actions(expense, categories, user.locale))
 
 
 async def _ensure_user(session: AsyncSession, message: Message):
@@ -448,6 +465,38 @@ def _format_expense(expense, locale: str | None) -> str:
         f"{expense.spent_at:%Y-%m-%d %H:%M} - {expense.amount} {expense.currency} - "
         f"{category_label(expense.category.name, locale)} - "
         f"{expense.description or '-'}"
+    )
+
+
+def _format_budget_report(report, locale: str | None, currency: str) -> str:
+    month = datetime.now(UTC).strftime("%Y-%m")
+    if not report:
+        return tr(locale, "budget_report_empty")
+    lines = [tr(locale, "budget_report_title", month=month)]
+    for line in report:
+        name = tr(locale, "total") if line.category_id is None else category_label(
+            line.category_name, locale
+        )
+        lines.append(
+            f"{name}: {line.spent:.2f} / {line.amount:.2f} {currency} "
+            f"({line.remaining:.2f} {tr(locale, 'remaining')})"
+        )
+    return "\n".join(lines)
+
+
+def _format_budget_alert(line, locale: str | None, currency: str) -> str:
+    name = tr(locale, "total") if line.category_id is None else category_label(
+        line.category_name, locale
+    )
+    return tr(
+        locale,
+        "budget_alert",
+        name=name,
+        percent=line.ratio * Decimal("100"),
+        spent=line.spent,
+        amount=line.amount,
+        remaining=line.remaining,
+        currency=currency,
     )
 
 
