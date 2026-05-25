@@ -126,3 +126,44 @@ python -m scripts.seed_filosf_two_months
 ```
 
 The script creates 1-5 expenses per day and only replaces previous demo rows whose description starts with `[seed]`.
+
+## Render deployment
+
+Use one Render Web Service for both FastAPI dashboard and Telegram webhook.
+Do not run `python -m app.bot.main` on Render; polling is for local development only.
+
+Render setup:
+
+1. Push this repository to GitHub.
+2. Create a paid Render Postgres database.
+3. Create a Render Web Service from the repository.
+4. Use:
+
+```text
+Build Command: pip install -r requirements.txt
+Pre-deploy Command: python -m alembic upgrade head
+Start Command: python -m uvicorn app.main:app --host 0.0.0.0 --port $PORT
+```
+
+Required environment variables:
+
+```env
+BOT_TOKEN=your-telegram-bot-token
+DATABASE_URL=your-render-postgres-internal-url
+ENABLE_BOT_WEBHOOK=true
+TELEGRAM_WEBHOOK_SECRET=random-long-secret
+APP_SECRET=random-long-secret
+DEFAULT_CURRENCY=ILS
+DEFAULT_TIMEZONE=Asia/Jerusalem
+```
+
+Render automatically provides `RENDER_EXTERNAL_URL`; the app uses it for Telegram webhook and dashboard login links.
+
+After deploy, open:
+
+```text
+https://your-service.onrender.com/
+https://your-service.onrender.com/docs
+```
+
+Then send `/web` to the Telegram bot.

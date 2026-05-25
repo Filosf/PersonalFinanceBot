@@ -1,0 +1,29 @@
+services:
+  - type: web
+    name: personal-finance-bot
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    preDeployCommand: python -m alembic upgrade head
+    startCommand: python -m uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.13.0
+      - key: ENABLE_BOT_WEBHOOK
+        value: "true"
+      - key: TELEGRAM_WEBHOOK_PATH
+        value: /telegram/webhook
+      - key: DEFAULT_CURRENCY
+        value: ILS
+      - key: DEFAULT_TIMEZONE
+        value: Asia/Jerusalem
+      - key: LOG_LEVEL
+        value: INFO
+      - key: APP_SECRET
+        generateValue: true
+      - key: TELEGRAM_WEBHOOK_SECRET
+        generateValue: true
+      - key: BOT_TOKEN
+        sync: false
+      - key: DATABASE_URL
+        sync: false

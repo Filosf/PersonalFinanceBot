@@ -77,7 +77,7 @@ async def web_login(message: Message) -> None:
 
     token = create_access_token(user.telegram_id)
     settings = get_settings()
-    login_url = f"{settings.app_base_url.rstrip('/')}/login/token?{urlencode({'token': token})}"
+    login_url = f"{settings.public_base_url}/login/token?{urlencode({'token': token})}"
     keyboard = None
     login_line = login_url
     if _is_public_http_url(login_url):
