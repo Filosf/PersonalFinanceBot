@@ -478,7 +478,7 @@ def _pie_segments(categories: list[dict]) -> list[dict]:
     total = sum((Decimal(item["total"]) for item in categories), Decimal("0"))
     if total <= 0:
         return []
-    colors = ("#0f766e", "#2563eb", "#d97706", "#7c3aed", "#be123c", "#4d7c0f", "#0f172a")
+    colors = ("#2563eb", "#d97706", "#7c3aed", "#be123c", "#4d7c0f", "#0f172a")
     cursor = Decimal("0")
     segments = []
     for index, item in enumerate(categories):
@@ -493,10 +493,18 @@ def _pie_segments(categories: list[dict]) -> list[dict]:
                 "percent": percent,
                 "start": start,
                 "end": cursor,
-                "color": colors[index % len(colors)],
+                "color": _category_chart_color(item["category"], index, colors),
             }
         )
     return segments
+
+
+def _category_chart_color(category: str, index: int, fallback_colors: tuple[str, ...]) -> str:
+    if category == "Income":
+        return "#15803d"
+    if category == "General":
+        return "#b42318"
+    return fallback_colors[index % len(fallback_colors)]
 
 
 def _category_summary_with_income(categories: list[dict], income: Decimal) -> list[dict]:
