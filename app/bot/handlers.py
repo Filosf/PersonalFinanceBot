@@ -265,7 +265,11 @@ async def set_category(callback: CallbackQuery) -> None:
     try:
         await callback.message.edit_text(
             _format_added(expense, user.locale),
-            reply_markup=expense_actions(expense, categories, user.locale),
+            reply_markup=(
+                expense_actions(expense, categories, user.locale)
+                if expense.kind == "expense"
+                else None
+            ),
         )
     except TelegramBadRequest as exc:
         if "message is not modified" not in str(exc):

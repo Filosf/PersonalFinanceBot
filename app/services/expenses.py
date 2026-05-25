@@ -37,7 +37,11 @@ class ExpenseService:
     ) -> Expense:
         if kind not in {"expense", "income"}:
             raise ValueError("Unknown expense kind")
+        if kind == "income":
+            category_name = "Income"
         category = await self._pick_category(user_id, description, category_name)
+        if category.name == "Income":
+            kind = "income"
         expense = Expense(
             user_id=user_id,
             category_id=category.id,
@@ -66,8 +70,9 @@ class ExpenseService:
         if amount is not None:
             expense.amount = amount
         if category_id is not None:
-            await self.categories.require_owned(user_id, category_id)
+            category = await self.categories.require_owned(user_id, category_id)
             expense.category_id = category_id
+            expense.kind = "income" if category.name == "Income" else "expense"
         if description is not None:
             expense.description = description
         if spent_at is not None:
@@ -76,6 +81,9 @@ class ExpenseService:
             if kind not in {"expense", "income"}:
                 raise ValueError("Unknown expense kind")
             expense.kind = kind
+            if kind == "income":
+                income = await self.categories.get_or_create(user_id, "Income")
+                expense.category_id = income.id
         await self.session.flush()
         await self.session.refresh(expense, ["category"])
         return expense

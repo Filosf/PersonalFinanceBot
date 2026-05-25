@@ -96,10 +96,12 @@
 
 <div class="category-summary">
   <h3>{{ t.by_category }}</h3>
-  {% for item in analytics.summary.categories %}
+  {% for item in analytics.category_summary %}
   <div class="category-row">
     <span>{{ item.category|category_label(user.locale) }}</span>
-    <strong>{{ "%.2f"|format(item.total) }} {{ user.currency }}</strong>
+    <strong class="{% if item.category == 'Income' %}metric-income{% else %}metric-expense{% endif %}">
+      {{ "%.2f"|format(item.total) }} {{ user.currency }}
+    </strong>
   </div>
   {% else %}
   <p>{{ t.no_expenses }}</p>

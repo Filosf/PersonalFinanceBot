@@ -1,14 +1,12 @@
+<div class="table-header-grid">
+  <span>{{ t.date }}</span>
+  <span>{{ t.amount }}</span>
+  <span>{{ t.currency }}</span>
+  <span>{{ t.category }}</span>
+  <span>{{ t.description }}</span>
+  <span></span>
+</div>
 <table>
-  <thead>
-    <tr>
-      <th>{{ t.date }}</th>
-      <th>{{ t.amount }}</th>
-      <th>{{ t.currency }}</th>
-      <th>{{ t.category }}</th>
-      <th>{{ t.description }}</th>
-      <th></th>
-    </tr>
-  </thead>
   <tbody>
     {% for expense in expenses %}
     <tr>
@@ -30,16 +28,13 @@
             class="{% if expense.kind == 'income' %}income-field{% else %}expense-field{% endif %}"
           >
           <span>{{ expense.currency }}</span>
-          <select name="category_id" aria-label="{{ t.category }}" {% if expense.kind == 'income' %}disabled{% endif %}>
+          <select name="category_id" aria-label="{{ t.category }}">
             {% for category in categories %}
             <option value="{{ category.id }}" {% if category.id == expense.category_id %}selected{% endif %}>
               {{ category.name|category_label(user.locale) }}
             </option>
             {% endfor %}
           </select>
-          {% if expense.kind == 'income' %}
-          <input type="hidden" name="category_id" value="{{ expense.category_id }}">
-          {% endif %}
           <input type="text" name="description" value="{{ expense.description }}" aria-label="{{ t.description }}">
           <div class="actions">
             <button

@@ -161,7 +161,11 @@ async def expenses_table(
         text=text or None,
     )
     expenses = await ExpenseService(session).list_expenses(user.id, filters)
-    categories = await CategoryService(session).list_categories(user.id)
+    categories = [
+        category
+        for category in await CategoryService(session).list_categories(user.id)
+        if category.name != "Income"
+    ]
     return request.app.state.templates.TemplateResponse(
         request,
         "partials/expenses_table.html",
@@ -195,6 +199,7 @@ async def create_expense(
         category_name=category.name,
         spent_at=_parse_date(spent_at) or datetime.now(UTC),
         currency=user.currency,
+        kind="income" if category.name == "Income" else "expense",
     )
     await session.commit()
     return await expenses_table(request, user=user, session=session)
@@ -384,6 +389,7 @@ async def _analytics_context(
     month_start = datetime.now(UTC).date().replace(day=1)
     month_start_at, month_end_at = month_bounds(month_start)
     month_summary = await service.summary(user.id, month_start_at, month_end_at)
+    month_cashflow = await service.cashflow_summary(user.id, month_start_at, month_end_at)
     max_total = max(
         (
             max(Decimal(item["income"]), Decimal(item["expense"]))
@@ -399,7 +405,12 @@ async def _analytics_context(
         "summary": summary,
         "cashflow": cashflow,
         "month_summary": month_summary,
-        "month_pie": _pie_segments(month_summary["categories"]),
+        "month_pie": _pie_segments(
+            _category_summary_with_income(month_summary["categories"], month_cashflow["income"])
+        ),
+        "category_summary": _category_summary_with_income(
+            summary["categories"], cashflow["income"]
+        ),
         "series": series,
         "max_total": max_total,
     }
@@ -442,7 +453,11 @@ async def _budgets_context(
     user: User, session: AsyncSession, month: str | None = None
 ) -> dict:
     month_start = month_start_from_iso(month)
-    categories = await CategoryService(session).list_categories(user.id)
+    categories = [
+        category
+        for category in await CategoryService(session).list_categories(user.id)
+        if category.name != "Income"
+    ]
     budget_rows = await BudgetService(session).report(user.id, month_start)
     by_category = {row.category_id: row for row in budget_rows}
     total = by_category.get(None)
@@ -482,3 +497,10 @@ def _pie_segments(categories: list[dict]) -> list[dict]:
             }
         )
     return segments
+
+
+def _category_summary_with_income(categories: list[dict], income: Decimal) -> list[dict]:
+    rows = list(categories)
+    if income > 0:
+        rows.append({"category": "Income", "total": income, "count": 0})
+    return rows

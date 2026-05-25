@@ -17,4 +17,5 @@ def test_translates_known_key() -> None:
 
 def test_translates_base_category_names() -> None:
     assert category_label("Food", "ru") == "Еда"
+    assert category_label("Income", "ru") == "Доход"
     assert category_label("Custom", "ru") == "Custom"

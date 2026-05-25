@@ -11,6 +11,7 @@ BASE_CATEGORY_TRANSLATIONS = {
         "Rent": "Аренда",
         "Entertainment": "Развлечения",
         "General": "Общее",
+        "Income": "Доход",
     }
 }
 
