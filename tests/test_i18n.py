@@ -13,6 +13,9 @@ def test_normalize_locale_detects_russian() -> None:
 
 def test_translates_known_key() -> None:
     assert tr("ru", "expenses") == "Расходы"
+    assert tr("ru", "total_expense") == "Всего расходов"
+    assert tr("ru", "total_income") == "Всего доходов"
+    assert tr("ru", "balance") == "Прирост / убыток"
 
 
 def test_translates_base_category_names() -> None:

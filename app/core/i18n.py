@@ -2,10 +2,6 @@ DEFAULT_LOCALE = "en"
 SUPPORTED_LOCALES = {"en", "ru"}
 BASE_CATEGORY_TRANSLATIONS = {
     "ru": {
-        "balance": "Прирост / убыток",
-        "income_added": "Доход добавлен",
-        "total_expense": "Всего расходов",
-        "total_income": "Всего доходов",
         "Food": "Еда",
         "Taxi": "Такси",
         "Rent": "Аренда",
@@ -137,6 +133,10 @@ TRANSLATIONS = {
         "year": "Year",
     },
     "ru": {
+        "balance": "Прирост / убыток",
+        "income_added": "Доход добавлен",
+        "total_expense": "Всего расходов",
+        "total_income": "Всего доходов",
         "access_key": "Ключ доступа",
         "add": "Добавить",
         "add_expense": "Добавить расход",
