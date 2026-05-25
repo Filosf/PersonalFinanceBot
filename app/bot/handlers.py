@@ -424,7 +424,6 @@ async def _ensure_user_from_telegram(session: AsyncSession, tg_user):
         telegram_id=tg_user.id,
         username=tg_user.username,
         locale=getattr(tg_user, "language_code", None),
-        update_locale=True,
     )
 
 
