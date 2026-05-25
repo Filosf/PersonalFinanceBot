@@ -18,6 +18,14 @@ TRANSLATIONS = {
         "all_categories": "All categories",
         "amount": "Amount",
         "analytics": "Analytics",
+        "admin_help": (
+            "Admin commands:\n"
+            "/admin_stats - service statistics\n"
+            "/admin_users - recent users\n"
+            "/admin_logs - where to read service logs\n"
+            "/admin_last_errors - recent captured errors\n"
+            "/admin_db_health - database health check"
+        ),
         "apply": "Apply",
         "by_category": "By category",
         "categories": "Categories",
@@ -109,6 +117,14 @@ TRANSLATIONS = {
         "all_categories": "Все категории",
         "amount": "Сумма",
         "analytics": "Аналитика",
+        "admin_help": (
+            "Админ-команды:\n"
+            "/admin_stats - статистика сервиса\n"
+            "/admin_users - последние пользователи\n"
+            "/admin_logs - где смотреть логи сервиса\n"
+            "/admin_last_errors - последние пойманные ошибки\n"
+            "/admin_db_health - проверка базы данных"
+        ),
         "apply": "Применить",
         "by_category": "По категориям",
         "categories": "Категории",

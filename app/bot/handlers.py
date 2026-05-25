@@ -47,7 +47,10 @@ async def help_command(message: Message) -> None:
     async with SessionLocal() as session:
         user = await _ensure_user(session, message)
         await session.commit()
-    await message.answer(tr(user.locale, "help"), reply_markup=_main_menu(user.locale))
+    text = tr(user.locale, "help")
+    if _is_admin(message):
+        text = f"{text}\n\n{tr(user.locale, 'admin_help')}"
+    await message.answer(text, reply_markup=_main_menu(user.locale))
 
 
 @router.message(F.text.startswith("/помощь"))
