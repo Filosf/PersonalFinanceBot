@@ -17,6 +17,8 @@ def test_translates_known_key() -> None:
     assert tr("ru", "total_income") == "Всего доходов"
     assert tr("ru", "balance") == "Прирост / убыток"
     assert tr("ru", "income_added") == "Доход добавлен"
+    assert tr("ru", "usage_add_category") == "Использование: /add_category Продукты"
+    assert "перейдите на сайт" in tr("ru", "budget_report_empty")
 
 
 def test_translates_base_category_names() -> None:

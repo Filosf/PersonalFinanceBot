@@ -140,7 +140,9 @@ async def categories_ru(message: Message) -> None:
 async def add_category(message: Message, command: CommandObject) -> None:
     name = (command.args or "").strip()
     if not name:
-        await message.answer(tr(_telegram_locale(message), "usage_add_category"))
+        async with SessionLocal() as session:
+            user = await _ensure_user(session, message)
+        await message.answer(tr(user.locale, "usage_add_category"))
         return
     async with SessionLocal() as session:
         user = await _ensure_user(session, message)
@@ -153,7 +155,9 @@ async def add_category(message: Message, command: CommandObject) -> None:
 async def add_category_ru(message: Message) -> None:
     name = _text_args(message.text)
     if not name:
-        await message.answer(tr(_telegram_locale(message), "usage_add_category"))
+        async with SessionLocal() as session:
+            user = await _ensure_user(session, message)
+        await message.answer(tr(user.locale, "usage_add_category"))
         return
     async with SessionLocal() as session:
         user = await _ensure_user(session, message)

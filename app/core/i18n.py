@@ -38,7 +38,9 @@ TRANSLATIONS = {
             "Spent: {spent:.2f} of {amount:.2f} {currency}\n"
             "Remaining: {remaining:.2f} {currency}"
         ),
-        "budget_report_empty": "No budgets are set for this month.",
+        "budget_report_empty": (
+            "No budgets are set for this month. Open the website to configure budgets."
+        ),
         "budget_report_title": "Budgets for {month}",
         "budgets": "Budgets",
         "budgets_saved": "Budgets saved.",
@@ -160,7 +162,9 @@ TRANSLATIONS = {
             "Потрачено: {spent:.2f} из {amount:.2f} {currency}\n"
             "Осталось: {remaining:.2f} {currency}"
         ),
-        "budget_report_empty": "На этот месяц бюджеты не настроены.",
+        "budget_report_empty": (
+            "На этот месяц бюджеты не настроены. Для настройки перейдите на сайт."
+        ),
         "budget_report_title": "Бюджеты на {month}",
         "budgets": "Бюджеты",
         "budgets_saved": "Бюджеты сохранены.",
