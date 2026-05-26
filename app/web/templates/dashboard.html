@@ -11,6 +11,7 @@
   <div class="top-actions">
     <form method="post" action="/language" class="language-form">
       <span>{{ t.language }}</span>
+      <input id="language-tab" type="hidden" name="tab" value="{{ active_tab }}">
       <button class="{% if user.locale == 'en' %}active{% endif %}" name="locale" value="en" type="submit">EN</button>
       <button class="{% if user.locale == 'ru' %}active{% endif %}" name="locale" value="ru" type="submit">RU</button>
     </form>
@@ -21,9 +22,9 @@
 </header>
 
 <div class="tabs">
-  <input id="tab-analytics" type="radio" name="dashboard_tab" checked>
-  <input id="tab-budgets" type="radio" name="dashboard_tab">
-  <input id="tab-categories" type="radio" name="dashboard_tab">
+  <input id="tab-analytics" type="radio" name="dashboard_tab" value="analytics" {% if active_tab == "analytics" %}checked{% endif %}>
+  <input id="tab-budgets" type="radio" name="dashboard_tab" value="budgets" {% if active_tab == "budgets" %}checked{% endif %}>
+  <input id="tab-categories" type="radio" name="dashboard_tab" value="categories" {% if active_tab == "categories" %}checked{% endif %}>
 
   <nav class="tab-nav" aria-label="{{ t.dashboard }}">
     <label for="tab-analytics">{{ t.tab_analytics }}</label>
@@ -56,32 +57,21 @@
       </form>
     </section>
 
-    <section class="grid main-grid">
+    <section class="add-expense-row">
       <form
-        class="panel"
+        class="panel add-row-form"
         hx-post="/expenses"
         hx-target="#expenses-table"
         hx-on::after-request="if(event.detail.successful) this.reset()"
+        aria-label="{{ t.add_expense }}"
       >
-        <h2>{{ t.add_expense }}</h2>
-        <label>
-          {{ t.amount }}
-          <input type="number" name="amount" step="0.01" min="0.01" required>
-        </label>
-        <label>
-          {{ t.category }}
-          <select name="category_id" required id="category-select">
-            {% include "partials/category_options.html" %}
-          </select>
-        </label>
-        <label>
-          {{ t.description }}
-          <input type="text" name="description">
-        </label>
-        <label>
-          {{ t.date }}
-          <input type="datetime-local" name="spent_at">
-        </label>
+        <input type="datetime-local" name="spent_at" aria-label="{{ t.date }}" title="{{ t.date }}">
+        <input type="number" name="amount" step="0.01" min="0.01" required placeholder="{{ t.amount }}" aria-label="{{ t.amount }}">
+        <span class="row-currency">{{ user.currency }}</span>
+        <select name="category_id" required id="category-select" aria-label="{{ t.category }}">
+          {% include "partials/category_options.html" %}
+        </select>
+        <input type="text" name="description" placeholder="{{ t.description }}" aria-label="{{ t.description }}">
         <button type="submit">{{ t.add }}</button>
       </form>
     </section>
@@ -99,4 +89,11 @@
     {% include "partials/categories_panel.html" %}
   </section>
 </div>
+<script>
+  document.querySelectorAll('input[name="dashboard_tab"]').forEach((input) => {
+    input.addEventListener("change", () => {
+      document.getElementById("language-tab").value = input.value;
+    });
+  });
+</script>
 {% endblock %}

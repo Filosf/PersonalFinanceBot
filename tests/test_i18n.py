@@ -10,6 +10,8 @@ def test_commands_and_help_are_separate() -> None:
     assert tr("en", "menu_commands") == "Commands"
     assert "/commands" in tr("en", "commands")
     assert "How to use" in tr("en", "help")
+    assert tr("en", "merge") == "Merge"
+    assert tr("en", "category_empty") == "Category is empty"
 
 
 def test_normalize_locale_detects_russian() -> None:

@@ -29,6 +29,7 @@ async def web_user(request: Request, session: AsyncSession = Depends(get_session
 @router.get("/", response_class=HTMLResponse)
 async def index(
     request: Request,
+    tab: str = "analytics",
     user: User | None = Depends(web_user),
     session: AsyncSession = Depends(get_session),
 ) -> HTMLResponse:
@@ -59,6 +60,7 @@ async def index(
             "expenses": expenses,
             "analytics": analytics,
             "budgets": budgets,
+            "active_tab": _normalize_tab(tab),
         },
     )
 
@@ -114,6 +116,7 @@ async def logout() -> RedirectResponse:
 @router.post("/language")
 async def language(
     locale: str = Form(),
+    tab: str = Form(default="analytics"),
     user: User | None = Depends(web_user),
     session: AsyncSession = Depends(get_session),
 ) -> RedirectResponse:
@@ -121,7 +124,9 @@ async def language(
         raise HTTPException(status_code=401)
     await UserService(session).set_locale(user.id, normalize_locale(locale))
     await session.commit()
-    return RedirectResponse("/", status_code=status.HTTP_303_SEE_OTHER)
+    return RedirectResponse(
+        f"/?tab={_normalize_tab(tab)}", status_code=status.HTTP_303_SEE_OTHER
+    )
 
 
 @router.get("/analytics", response_class=HTMLResponse)
@@ -381,6 +386,10 @@ async def _categories_panel_response(
 
 def _editable_categories(categories: list) -> list:
     return [category for category in categories if not is_protected_category(category.name)]
+
+
+def _normalize_tab(tab: str | None) -> str:
+    return tab if tab in {"analytics", "budgets", "categories"} else "analytics"
 
 
 def _parse_date(value: str | None, end_of_day: bool = False) -> datetime | None:

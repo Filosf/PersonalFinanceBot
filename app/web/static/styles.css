@@ -365,6 +365,30 @@ p {
   grid-template-columns: minmax(280px, 520px);
 }
 
+.add-expense-row {
+  margin-bottom: 16px;
+  overflow-x: auto;
+}
+
+.add-row-form {
+  display: grid;
+  grid-template-columns: 230px 120px 50px 160px minmax(180px, 1fr) max-content;
+  gap: 10px;
+  align-items: center;
+  min-width: 1080px;
+  padding: 10px 12px;
+}
+
+.add-row-form input,
+.add-row-form select {
+  min-width: 0;
+}
+
+.row-currency {
+  color: var(--text);
+  white-space: nowrap;
+}
+
 .panel {
   padding: 16px;
 }
@@ -413,6 +437,11 @@ p {
 
 .category-edit-row button {
   white-space: nowrap;
+}
+
+.category-empty-note {
+  color: var(--muted);
+  font-size: 13px;
 }
 
 .budget-list {
@@ -568,6 +597,7 @@ td {
   .metrics,
   .grid,
   .filters,
+  .add-row-form,
   .row-form {
     grid-template-columns: 1fr;
   }
@@ -597,6 +627,7 @@ td {
     grid-template-columns: 1fr;
   }
 
+  .add-row-form,
   .row-form {
     min-width: 0;
   }
