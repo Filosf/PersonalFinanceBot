@@ -118,6 +118,50 @@ p {
   margin-bottom: 16px;
 }
 
+.tabs > input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.tab-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.tab-nav label {
+  display: inline-flex;
+  align-items: center;
+  min-height: 38px;
+  margin: 0;
+  padding: 8px 14px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #eef2f6;
+  color: var(--text);
+  cursor: pointer;
+}
+
+#tab-analytics:checked ~ .tab-nav label[for="tab-analytics"],
+#tab-budgets:checked ~ .tab-nav label[for="tab-budgets"],
+#tab-categories:checked ~ .tab-nav label[for="tab-categories"] {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #fff;
+}
+
+.tab-panel {
+  display: none;
+}
+
+#tab-analytics:checked ~ .analytics-tab,
+#tab-budgets:checked ~ .budgets-tab,
+#tab-categories:checked ~ .categories-tab {
+  display: block;
+}
+
 .analytics-wrap {
   background: var(--surface);
   border: 1px solid var(--line);
@@ -315,6 +359,10 @@ p {
 .grid {
   grid-template-columns: 2fr 1fr;
   margin-bottom: 16px;
+}
+
+.main-grid {
+  grid-template-columns: minmax(280px, 520px);
 }
 
 .panel {

@@ -20,65 +20,83 @@
   </div>
 </header>
 
-<section id="analytics" class="analytics-wrap">
-  {% include "partials/analytics.html" %}
-</section>
+<div class="tabs">
+  <input id="tab-analytics" type="radio" name="dashboard_tab" checked>
+  <input id="tab-budgets" type="radio" name="dashboard_tab">
+  <input id="tab-categories" type="radio" name="dashboard_tab">
 
-<section class="toolbar">
-  <form
-    class="filters"
-    hx-get="/expenses/table"
-    hx-target="#expenses-table"
-    hx-trigger="submit, change delay:250ms from:select, keyup delay:350ms from:input[type='search']"
-  >
-    <input type="date" name="date_from" aria-label="{{ t.from_date }}">
-    <input type="date" name="date_to" aria-label="{{ t.to_date }}">
-    <select id="filter-category-select" name="category_id" aria-label="{{ t.category }}">
-      <option value="">{{ t.all_categories }}</option>
-      {% include "partials/category_options.html" %}
-    </select>
-    <input type="number" step="0.01" name="min_amount" placeholder="{{ t.min }}">
-    <input type="number" step="0.01" name="max_amount" placeholder="{{ t.max }}">
-    <input type="search" name="text" placeholder="{{ t.search_description }}">
-    <button type="submit">{{ t.apply }}</button>
-  </form>
-</section>
+  <nav class="tab-nav" aria-label="{{ t.dashboard }}">
+    <label for="tab-analytics">{{ t.tab_analytics }}</label>
+    <label for="tab-budgets">{{ t.tab_budgets }}</label>
+    <label for="tab-categories">{{ t.tab_categories }}</label>
+  </nav>
 
-<section class="grid">
-  <form
-    class="panel"
-    hx-post="/expenses"
-    hx-target="#expenses-table"
-    hx-on::after-request="if(event.detail.successful) this.reset()"
-  >
-    <h2>{{ t.add_expense }}</h2>
-    <label>
-      {{ t.amount }}
-      <input type="number" name="amount" step="0.01" min="0.01" required>
-    </label>
-    <label>
-      {{ t.category }}
-      <select name="category_id" required id="category-select">
-        {% include "partials/category_options.html" %}
-      </select>
-    </label>
-    <label>
-      {{ t.description }}
-      <input type="text" name="description">
-    </label>
-    <label>
-      {{ t.date }}
-      <input type="datetime-local" name="spent_at">
-    </label>
-    <button type="submit">{{ t.add }}</button>
-  </form>
+  <section class="tab-panel analytics-tab">
+    <section id="analytics" class="analytics-wrap">
+      {% include "partials/analytics.html" %}
+    </section>
 
-  {% include "partials/categories_panel.html" %}
+    <section class="toolbar">
+      <form
+        class="filters"
+        hx-get="/expenses/table"
+        hx-target="#expenses-table"
+        hx-trigger="submit, change delay:250ms from:select, keyup delay:350ms from:input[type='search']"
+      >
+        <input type="date" name="date_from" aria-label="{{ t.from_date }}">
+        <input type="date" name="date_to" aria-label="{{ t.to_date }}">
+        <select id="filter-category-select" name="category_id" aria-label="{{ t.category }}">
+          <option value="">{{ t.all_categories }}</option>
+          {% include "partials/category_options.html" %}
+        </select>
+        <input type="number" step="0.01" name="min_amount" placeholder="{{ t.min }}">
+        <input type="number" step="0.01" name="max_amount" placeholder="{{ t.max }}">
+        <input type="search" name="text" placeholder="{{ t.search_description }}">
+        <button type="submit">{{ t.apply }}</button>
+      </form>
+    </section>
 
-  {% include "partials/budgets_panel.html" %}
-</section>
+    <section class="grid main-grid">
+      <form
+        class="panel"
+        hx-post="/expenses"
+        hx-target="#expenses-table"
+        hx-on::after-request="if(event.detail.successful) this.reset()"
+      >
+        <h2>{{ t.add_expense }}</h2>
+        <label>
+          {{ t.amount }}
+          <input type="number" name="amount" step="0.01" min="0.01" required>
+        </label>
+        <label>
+          {{ t.category }}
+          <select name="category_id" required id="category-select">
+            {% include "partials/category_options.html" %}
+          </select>
+        </label>
+        <label>
+          {{ t.description }}
+          <input type="text" name="description">
+        </label>
+        <label>
+          {{ t.date }}
+          <input type="datetime-local" name="spent_at">
+        </label>
+        <button type="submit">{{ t.add }}</button>
+      </form>
+    </section>
 
-<section id="expenses-table" class="table-wrap">
-  {% include "partials/expenses_table.html" %}
-</section>
+    <section id="expenses-table" class="table-wrap">
+      {% include "partials/expenses_table.html" %}
+    </section>
+  </section>
+
+  <section class="tab-panel budgets-tab">
+    {% include "partials/budgets_panel.html" %}
+  </section>
+
+  <section class="tab-panel categories-tab">
+    {% include "partials/categories_panel.html" %}
+  </section>
+</div>
 {% endblock %}

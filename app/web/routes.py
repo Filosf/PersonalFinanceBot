@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, Form, HTTPException, Request, status
 from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import get_settings
 from app.core.i18n import labels, normalize_locale
 from app.db.models import User
 from app.db.session import get_session
@@ -166,11 +167,7 @@ async def expenses_table(
         text=text or None,
     )
     expenses = await ExpenseService(session).list_expenses(user.id, filters)
-    categories = [
-        category
-        for category in await CategoryService(session).list_categories(user.id)
-        if category.name != "Income"
-    ]
+    categories = await CategoryService(session).list_categories(user.id)
     return request.app.state.templates.TemplateResponse(
         request,
         "partials/expenses_table.html",
@@ -227,7 +224,11 @@ async def save_budgets(
     await service.set_month_budget(
         user.id, month_start, _parse_decimal(total_budget), category_id=None
     )
-    categories = await CategoryService(session).list_categories(user.id)
+    categories = [
+        category
+        for category in await CategoryService(session).list_categories(user.id)
+        if category.name != "Income"
+    ]
     for category in categories:
         await service.set_month_budget(
             user.id,
@@ -402,7 +403,13 @@ def _parse_decimal(value: str | None) -> Decimal | None:
 
 def _login_response(telegram_id: int) -> RedirectResponse:
     response = RedirectResponse("/", status_code=status.HTTP_303_SEE_OTHER)
-    response.set_cookie("telegram_id", str(telegram_id), httponly=True, samesite="lax")
+    response.set_cookie(
+        "telegram_id",
+        str(telegram_id),
+        httponly=True,
+        samesite="lax",
+        max_age=get_settings().access_token_ttl_minutes * 60,
+    )
     return response
 
 

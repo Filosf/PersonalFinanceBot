@@ -6,6 +6,7 @@ from sqlalchemy import Select, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.core.i18n import category_label
 from app.db.models import Category, Expense
 from app.services.categories import CategoryService
 
@@ -269,10 +270,13 @@ class ExpenseService:
         if category_name:
             return await self.categories.get_or_create(user_id, category_name)
 
-        normalized = description.lower()
-        for name in ("Food", "Taxi", "Rent", "Entertainment"):
-            if name.lower() in normalized:
-                return await self.categories.get_or_create(user_id, name)
+        categories = await self.categories.list_categories(user_id)
+        normalized = _normalize_category_text(description)
+        for category in sorted(categories, key=lambda item: len(item.name), reverse=True):
+            if category.name == "Income":
+                continue
+            if _category_matches_description(category, normalized):
+                return category
         return await self.categories.get_or_create(user_id, "General")
 
     def _filtered_query(
@@ -294,3 +298,25 @@ class ExpenseService:
         if filters.text:
             stmt = stmt.where(Expense.description.ilike(f"%{filters.text}%"))
         return stmt
+
+
+def _normalize_category_text(value: str) -> str:
+    return " ".join(value.casefold().strip().split())
+
+
+def _category_matches_description(category: Category, normalized_description: str) -> bool:
+    if not normalized_description:
+        return False
+    candidates = {
+        _normalize_category_text(category.name),
+        _normalize_category_text(category_label(category.name, "en")),
+        _normalize_category_text(category_label(category.name, "ru")),
+    }
+    candidates.discard("")
+    return any(
+        normalized_description == candidate
+        or normalized_description.startswith(f"{candidate} ")
+        or normalized_description.endswith(f" {candidate}")
+        or f" {candidate} " in normalized_description
+        for candidate in candidates
+    )
