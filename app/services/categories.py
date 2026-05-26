@@ -26,25 +26,31 @@ class CategoryService:
         return list(result.scalars())
 
     async def get_by_name(self, user_id: int, name: str) -> Category | None:
+        name = _validate_category_name(name)
         result = await self.session.execute(
             select(Category).where(Category.user_id == user_id, Category.name.ilike(name))
         )
         return result.scalar_one_or_none()
 
     async def get_or_create(self, user_id: int, name: str) -> Category:
+        name = _validate_category_name(name)
         category = await self.get_by_name(user_id, name)
         if category:
             return category
-        category = Category(user_id=user_id, name=name.strip())
+        category = Category(user_id=user_id, name=name)
         self.session.add(category)
         await self.session.flush()
         return category
 
     async def rename(self, user_id: int, category_id: int, name: str) -> Category:
+        name = _validate_category_name(name)
         category = await self.require_owned(user_id, category_id)
         if is_protected_category(category.name):
             raise ValueError("Protected categories cannot be renamed")
-        category.name = name.strip()
+        duplicate = await self.get_by_name(user_id, name)
+        if duplicate and duplicate.id != category.id:
+            raise ValueError("Category already exists")
+        category.name = name
         await self.session.flush()
         return category
 
@@ -70,11 +76,17 @@ class CategoryService:
                 raise ValueError("Choose another category to merge into")
             if target.name == "Income":
                 raise ValueError("Expenses cannot be merged into Income")
-            await self.session.execute(
-                Expense.__table__.update()
-                .where(Expense.user_id == user_id, Expense.category_id == category_id)
-                .values(category_id=target.id)
-            )
+            target_id = target.id
+        else:
+            target = await self.get_by_name(user_id, "General")
+            if not target:
+                raise ValueError("General category not found")
+            target_id = target.id
+        await self.session.execute(
+            Expense.__table__.update()
+            .where(Expense.user_id == user_id, Expense.category_id == category_id)
+            .values(category_id=target_id)
+        )
         await self.session.delete(category)
 
     async def expense_count(self, user_id: int, category_id: int) -> int:
@@ -82,6 +94,7 @@ class CategoryService:
             select(func.count(Expense.id)).where(
                 Expense.user_id == user_id,
                 Expense.category_id == category_id,
+                Expense.deleted_at.is_(None),
             )
         )
         return int(result.scalar_one())
@@ -94,3 +107,12 @@ class CategoryService:
         if not category:
             raise PermissionError("Category not found")
         return category
+
+
+def _validate_category_name(name: str) -> str:
+    value = " ".join((name or "").strip().split())
+    if not value:
+        raise ValueError("Category name is required")
+    if len(value) > 80:
+        raise ValueError("Category name is too long")
+    return value

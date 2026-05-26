@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     default_currency: str = "ILS"
     default_timezone: str = "Asia/Jerusalem"
     log_level: str = "INFO"
+    allow_developer_login: bool = False
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
@@ -39,6 +40,16 @@ class Settings(BaseSettings):
     @property
     def telegram_webhook_url(self) -> str:
         return f"{self.public_base_url}{self.telegram_webhook_path}"
+
+    @property
+    def is_production(self) -> bool:
+        return self.enable_bot_webhook or bool(self.render_external_url)
+
+    def validate_runtime_secrets(self) -> None:
+        if self.is_production and (
+            self.app_secret == "change-me" or len(self.app_secret) < 32
+        ):
+            raise RuntimeError("APP_SECRET must be a strong 32+ character secret")
 
 
 @lru_cache

@@ -12,10 +12,12 @@
     <form method="post" action="/language" class="language-form">
       <span>{{ t.language }}</span>
       <input id="language-tab" type="hidden" name="tab" value="{{ active_tab }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
       <button class="{% if user.locale == 'en' %}active{% endif %}" name="locale" value="en" type="submit">EN</button>
       <button class="{% if user.locale == 'ru' %}active{% endif %}" name="locale" value="ru" type="submit">RU</button>
     </form>
     <form method="post" action="/logout">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
       <button class="ghost" type="submit">{{ t.logout }}</button>
     </form>
   </div>
@@ -61,6 +63,7 @@
         hx-on::after-request="if(event.detail.successful) this.reset()"
         aria-label="{{ t.add_expense }}"
       >
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
         <input type="datetime-local" name="spent_at" aria-label="{{ t.date }}" title="{{ t.date }}">
         <input type="number" name="amount" step="0.01" min="0.01" required placeholder="{{ t.amount }}" aria-label="{{ t.amount }}">
         <span class="row-currency">{{ user.currency }}</span>

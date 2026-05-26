@@ -12,10 +12,11 @@
     <tr>
       <td colspan="6">
         <form class="row-form" hx-post="/expenses/{{ expense.id }}" hx-target="#expenses-table">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
           <input
             type="datetime-local"
             name="spent_at"
-            value="{{ expense.spent_at.strftime('%Y-%m-%dT%H:%M') }}"
+            value="{{ (expense.spent_at|datetime_local(user.timezone)).strftime('%Y-%m-%dT%H:%M') }}"
             aria-label="{{ t.date }}"
           >
           <input

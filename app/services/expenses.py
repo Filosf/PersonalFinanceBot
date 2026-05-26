@@ -36,6 +36,8 @@ class ExpenseService:
         currency: str = "ILS",
         kind: str = "expense",
     ) -> Expense:
+        amount = _validate_amount(amount)
+        description = _validate_description(description)
         if kind not in {"expense", "income"}:
             raise ValueError("Unknown expense kind")
         if kind == "income":
@@ -69,13 +71,13 @@ class ExpenseService:
     ) -> Expense:
         expense = await self.require_owned(user_id, expense_id)
         if amount is not None:
-            expense.amount = amount
+            expense.amount = _validate_amount(amount)
         if category_id is not None:
             category = await self.categories.require_owned(user_id, category_id)
             expense.category_id = category_id
             expense.kind = "income" if category.name == "Income" else "expense"
         if description is not None:
-            expense.description = description
+            expense.description = _validate_description(description)
         if spent_at is not None:
             expense.spent_at = spent_at
         if kind is not None:
@@ -302,6 +304,20 @@ class ExpenseService:
 
 def _normalize_category_text(value: str) -> str:
     return " ".join(value.casefold().strip().split())
+
+
+def _validate_amount(amount: Decimal) -> Decimal:
+    amount = Decimal(amount).quantize(Decimal("0.01"))
+    if amount <= 0:
+        raise ValueError("Amount must be greater than zero")
+    return amount
+
+
+def _validate_description(description: str | None) -> str:
+    value = (description or "").strip()
+    if len(value) > 500:
+        raise ValueError("Description is too long")
+    return value
 
 
 def _category_matches_description(category: Category, normalized_description: str) -> bool:

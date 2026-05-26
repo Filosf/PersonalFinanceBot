@@ -12,6 +12,7 @@
     <button type="submit">{{ t.sign_in }}</button>
   </form>
 
+  {% if allow_developer_login %}
   <form method="post" action="/login" class="panel secondary-login">
     <h2>{{ t.developer_login }}</h2>
     <label>
@@ -24,5 +25,6 @@
     </label>
     <button type="submit">{{ t.sign_in }}</button>
   </form>
+  {% endif %}
 </section>
 {% endblock %}

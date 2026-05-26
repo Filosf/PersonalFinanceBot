@@ -6,6 +6,7 @@
   {% endif %}
 
   <form hx-post="/categories" hx-target="#categories-panel" hx-swap="outerHTML">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
     <label>
       {{ t.new_category }}
       <input type="text" name="name" maxlength="80" required>
@@ -25,7 +26,15 @@
           hx-target="#categories-panel"
           hx-swap="outerHTML"
         >
-          <input type="text" name="name" value="{{ category.name|category_label(user.locale) }}" maxlength="80" required>
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+          <input
+            type="text"
+            name="name"
+            value="{{ category.name }}"
+            placeholder="{{ category.name|category_label(user.locale) }}"
+            maxlength="80"
+            required
+          >
           <button type="submit">{{ t.rename }}</button>
         </form>
         <form
@@ -36,6 +45,7 @@
           hx-confirm="{% if expense_count %}{{ t.merge }}?{% else %}{{ t.delete }}?{% endif %}"
           title="{{ t.delete_empty_or_merge }}"
         >
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
           {% if expense_count %}
           <select name="merge_category_id" aria-label="{{ t.merge_into }}" required>
             <option value="">{{ t.merge_into }}</option>

@@ -6,6 +6,7 @@
   {% endif %}
 
   <form hx-post="/budgets" hx-target="#budgets-panel" hx-swap="outerHTML">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
     <label>
       {{ t.month }}
       <input type="month" name="month" value="{{ budgets.month[:7] }}" required>

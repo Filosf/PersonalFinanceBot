@@ -36,7 +36,10 @@ async def create_category(
     user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session),
 ):
-    category = await CategoryService(session).get_or_create(user.id, payload.name)
+    try:
+        category = await CategoryService(session).get_or_create(user.id, payload.name)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
     await session.commit()
     return category
 

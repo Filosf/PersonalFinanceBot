@@ -105,6 +105,19 @@ To sign in to the dashboard as a normal user:
 For MVP, access keys are signed with `APP_SECRET` and expire after `ACCESS_TOKEN_TTL_MINUTES`.
 In production, replace or complement this with Telegram Login Widget signature verification.
 
+Generate a strong `APP_SECRET` with:
+
+```powershell
+python -c "import secrets; print(secrets.token_urlsafe(48))"
+```
+
+Use the generated value instead of examples such as `random-long-secret`.
+Developer Telegram ID login is disabled by default. Only enable it locally with:
+
+```env
+ALLOW_DEVELOPER_LOGIN=true
+```
+
 ## Language and analytics
 
 - The bot uses Russian automatically when Telegram sends `language_code=ru`; otherwise it uses English.
@@ -155,7 +168,8 @@ BOT_TOKEN=your-telegram-bot-token
 DATABASE_URL=your-render-postgres-internal-url
 ENABLE_BOT_WEBHOOK=true
 TELEGRAM_WEBHOOK_SECRET=random-long-secret
-APP_SECRET=random-long-secret
+APP_SECRET=output-from-python-secrets-token-urlsafe-48
+ALLOW_DEVELOPER_LOGIN=false
 DEFAULT_CURRENCY=ILS
 DEFAULT_TIMEZONE=Asia/Jerusalem
 ADMIN_IDS=comma-separated-telegram-admin-ids
@@ -183,3 +197,11 @@ https://your-service.onrender.com/docs
 ```
 
 Then send `/web` to the Telegram bot.
+
+REST API requests use the same short-lived access key as a bearer token:
+
+```text
+Authorization: Bearer <access-key-from-/web>
+```
+
+The old `X-Telegram-Id` developer header only works when `ALLOW_DEVELOPER_LOGIN=true`.
