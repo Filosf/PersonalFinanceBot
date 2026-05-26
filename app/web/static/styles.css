@@ -146,7 +146,8 @@ p {
 
 #tab-analytics:checked ~ .tab-nav label[for="tab-analytics"],
 #tab-budgets:checked ~ .tab-nav label[for="tab-budgets"],
-#tab-categories:checked ~ .tab-nav label[for="tab-categories"] {
+#tab-categories:checked ~ .tab-nav label[for="tab-categories"],
+.tab-nav label.active {
   border-color: var(--accent);
   background: var(--accent);
   color: #fff;
@@ -158,7 +159,8 @@ p {
 
 #tab-analytics:checked ~ .analytics-tab,
 #tab-budgets:checked ~ .budgets-tab,
-#tab-categories:checked ~ .categories-tab {
+#tab-categories:checked ~ .categories-tab,
+.tab-panel.active {
   display: block;
 }
 
