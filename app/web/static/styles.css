@@ -146,6 +146,7 @@ p {
   background: #eef2f6;
   color: var(--text);
   cursor: pointer;
+  text-decoration: none;
   white-space: nowrap;
 }
 

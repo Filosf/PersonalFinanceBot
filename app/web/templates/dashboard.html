@@ -23,12 +23,12 @@
 
 <div class="tabs">
   <nav class="tab-nav" aria-label="{{ t.dashboard }}">
-    <button class="tab-switch {% if active_tab == "analytics" %}active{% endif %}" data-tab="analytics" type="button" aria-selected="{% if active_tab == "analytics" %}true{% else %}false{% endif %}">{{ t.tab_analytics }}</button>
-    <button class="tab-switch {% if active_tab == "budgets" %}active{% endif %}" data-tab="budgets" type="button" aria-selected="{% if active_tab == "budgets" %}true{% else %}false{% endif %}">{{ t.tab_budgets }}</button>
-    <button class="tab-switch {% if active_tab == "categories" %}active{% endif %}" data-tab="categories" type="button" aria-selected="{% if active_tab == "categories" %}true{% else %}false{% endif %}">{{ t.tab_categories }}</button>
+    <a class="tab-switch {% if active_tab == "analytics" %}active{% endif %}" href="/?tab=analytics" aria-current="{% if active_tab == "analytics" %}page{% else %}false{% endif %}">{{ t.tab_analytics }}</a>
+    <a class="tab-switch {% if active_tab == "budgets" %}active{% endif %}" href="/?tab=budgets" aria-current="{% if active_tab == "budgets" %}page{% else %}false{% endif %}">{{ t.tab_budgets }}</a>
+    <a class="tab-switch {% if active_tab == "categories" %}active{% endif %}" href="/?tab=categories" aria-current="{% if active_tab == "categories" %}page{% else %}false{% endif %}">{{ t.tab_categories }}</a>
   </nav>
 
-  <section class="tab-panel {% if active_tab == "analytics" %}active{% endif %}" data-tab-panel="analytics">
+  <section class="tab-panel {% if active_tab == "analytics" %}active{% endif %}" {% if active_tab != "analytics" %}hidden{% endif %}>
     <section id="analytics" class="analytics-wrap">
       {% include "partials/analytics.html" %}
     </section>
@@ -77,31 +77,12 @@
     </section>
   </section>
 
-  <section class="tab-panel {% if active_tab == "budgets" %}active{% endif %}" data-tab-panel="budgets">
+  <section class="tab-panel {% if active_tab == "budgets" %}active{% endif %}" {% if active_tab != "budgets" %}hidden{% endif %}>
     {% include "partials/budgets_panel.html" %}
   </section>
 
-  <section class="tab-panel {% if active_tab == "categories" %}active{% endif %}" data-tab-panel="categories">
+  <section class="tab-panel {% if active_tab == "categories" %}active{% endif %}" {% if active_tab != "categories" %}hidden{% endif %}>
     {% include "partials/categories_panel.html" %}
   </section>
 </div>
-<script>
-  const languageTab = document.getElementById("language-tab");
-  const switches = document.querySelectorAll(".tab-switch");
-  const panels = document.querySelectorAll(".tab-panel");
-
-  function setDashboardTab(tab) {
-    languageTab.value = tab;
-    switches.forEach((item) => {
-      const isActive = item.dataset.tab === tab;
-      item.classList.toggle("active", isActive);
-      item.setAttribute("aria-selected", isActive ? "true" : "false");
-    });
-    panels.forEach((panel) => panel.classList.toggle("active", panel.dataset.tabPanel === tab));
-  }
-
-  switches.forEach((item) => {
-    item.addEventListener("click", () => setDashboardTab(item.dataset.tab));
-  });
-</script>
 {% endblock %}
