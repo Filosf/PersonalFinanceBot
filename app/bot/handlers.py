@@ -97,22 +97,24 @@ async def web_login(message: Message) -> None:
     token = create_access_token(user.telegram_id)
     settings = get_settings()
     login_url = f"{settings.public_base_url}/login/token?{urlencode({'token': token})}"
-    keyboard = None
-    login_line = login_url
     if _is_public_http_url(login_url):
         keyboard = InlineKeyboardMarkup(
             inline_keyboard=[
                 [InlineKeyboardButton(text=tr(user.locale, "open_dashboard"), url=login_url)]
             ]
         )
-        login_line = f"[{tr(user.locale, 'open_dashboard')}]({login_url})"
+        await message.answer(
+            f"{tr(user.locale, 'open_dashboard')}\n"
+            f"{tr(user.locale, 'valid_for_minutes', minutes=settings.access_token_ttl_minutes)}",
+            reply_markup=keyboard,
+        )
+        return
+
     await message.answer(
         f"{tr(user.locale, 'web_key_intro')}\n"
-        f"`{token}`\n\n"
-        f"{login_line}\n\n"
+        f"{token}\n\n"
+        f"{login_url}\n\n"
         f"{tr(user.locale, 'valid_for_minutes', minutes=settings.access_token_ttl_minutes)}",
-        parse_mode="Markdown",
-        reply_markup=keyboard,
     )
 
 
