@@ -134,7 +134,7 @@ p {
   padding-left: 6px;
 }
 
-.tab-nav .tab-switch {
+.tab-switch {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -153,12 +153,12 @@ p {
   white-space: nowrap;
 }
 
-.tab-nav .tab-switch:hover {
+.tab-switch:hover {
   background: #f8fafc;
   color: var(--accent);
 }
 
-.tab-nav .tab-switch:focus-visible {
+.tab-switch:focus-visible {
   outline: 2px solid rgba(15, 118, 110, 0.35);
   outline-offset: -2px;
 }
@@ -166,7 +166,7 @@ p {
 #tab-analytics:checked ~ .tab-nav label[for="tab-analytics"],
 #tab-budgets:checked ~ .tab-nav label[for="tab-budgets"],
 #tab-categories:checked ~ .tab-nav label[for="tab-categories"],
-.tab-nav .tab-switch.active {
+.tab-switch.active {
   border-color: var(--accent);
   background: var(--surface);
   color: var(--accent);
