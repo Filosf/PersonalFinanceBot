@@ -23,9 +23,9 @@
 
 <div class="tabs">
   <nav class="tab-nav" aria-label="{{ t.dashboard }}">
-    <label class="tab-switch {% if active_tab == "analytics" %}active{% endif %}" data-tab="analytics" tabindex="0" role="button">{{ t.tab_analytics }}</label>
-    <label class="tab-switch {% if active_tab == "budgets" %}active{% endif %}" data-tab="budgets" tabindex="0" role="button">{{ t.tab_budgets }}</label>
-    <label class="tab-switch {% if active_tab == "categories" %}active{% endif %}" data-tab="categories" tabindex="0" role="button">{{ t.tab_categories }}</label>
+    <button class="tab-switch {% if active_tab == "analytics" %}active{% endif %}" data-tab="analytics" type="button" aria-selected="{% if active_tab == "analytics" %}true{% else %}false{% endif %}">{{ t.tab_analytics }}</button>
+    <button class="tab-switch {% if active_tab == "budgets" %}active{% endif %}" data-tab="budgets" type="button" aria-selected="{% if active_tab == "budgets" %}true{% else %}false{% endif %}">{{ t.tab_budgets }}</button>
+    <button class="tab-switch {% if active_tab == "categories" %}active{% endif %}" data-tab="categories" type="button" aria-selected="{% if active_tab == "categories" %}true{% else %}false{% endif %}">{{ t.tab_categories }}</button>
   </nav>
 
   <section class="tab-panel {% if active_tab == "analytics" %}active{% endif %}" data-tab-panel="analytics">
@@ -92,18 +92,16 @@
 
   function setDashboardTab(tab) {
     languageTab.value = tab;
-    switches.forEach((item) => item.classList.toggle("active", item.dataset.tab === tab));
+    switches.forEach((item) => {
+      const isActive = item.dataset.tab === tab;
+      item.classList.toggle("active", isActive);
+      item.setAttribute("aria-selected", isActive ? "true" : "false");
+    });
     panels.forEach((panel) => panel.classList.toggle("active", panel.dataset.tabPanel === tab));
   }
 
   switches.forEach((item) => {
     item.addEventListener("click", () => setDashboardTab(item.dataset.tab));
-    item.addEventListener("keydown", (event) => {
-      if (event.key === "Enter" || event.key === " ") {
-        event.preventDefault();
-        setDashboardTab(item.dataset.tab);
-      }
-    });
   });
 </script>
 {% endblock %}
