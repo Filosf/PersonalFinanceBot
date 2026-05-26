@@ -104,8 +104,9 @@ async def web_login(message: Message) -> None:
             ]
         )
         await message.answer(
-            f"{tr(user.locale, 'open_dashboard')}\n"
+            f"[{tr(user.locale, 'open_dashboard')}]({login_url})\n"
             f"{tr(user.locale, 'valid_for_minutes', minutes=settings.access_token_ttl_minutes)}",
+            parse_mode="Markdown",
             reply_markup=keyboard,
         )
         return
