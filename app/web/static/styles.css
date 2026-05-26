@@ -350,6 +350,14 @@ p {
 
 .category-edit-row {
   display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, max-content);
+  gap: 8px;
+  align-items: center;
+}
+
+.category-rename-form,
+.category-delete-form {
+  display: grid;
   grid-template-columns: minmax(0, 1fr) max-content;
   gap: 8px;
   align-items: center;
@@ -529,6 +537,11 @@ td {
   }
 
   .category-edit-row {
+    grid-template-columns: 1fr;
+  }
+
+  .category-rename-form,
+  .category-delete-form {
     grid-template-columns: 1fr;
   }
 

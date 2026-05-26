@@ -10,7 +10,7 @@ from app.db.models import User
 from app.db.session import get_session
 from app.services.access_tokens import AccessTokenError, verify_access_token
 from app.services.budgets import BudgetService, month_bounds, month_start_from_iso
-from app.services.categories import CategoryService, is_default_category
+from app.services.categories import CategoryService, is_protected_category
 from app.services.defaults import DEFAULT_CATEGORIES
 from app.services.expenses import ExpenseFilters, ExpenseService
 from app.services.users import UserService
@@ -37,6 +37,10 @@ async def index(
         )
 
     categories = await CategoryService(session).list_categories(user.id)
+    expense_counts = {
+        category.id: await CategoryService(session).expense_count(user.id, category.id)
+        for category in categories
+    }
     expenses = await ExpenseService(session).list_expenses(user.id)
     analytics = await _analytics_context(user, session, period="month")
     budgets = await _budgets_context(user, session)
@@ -48,8 +52,9 @@ async def index(
             "user": user,
             "t": labels(user.locale),
             "categories": categories,
-            "custom_categories": _custom_categories(categories),
+            "editable_categories": _editable_categories(categories),
             "default_categories": DEFAULT_CATEGORIES,
+            "expense_counts": expense_counts,
             "expenses": expenses,
             "analytics": analytics,
             "budgets": budgets,
@@ -323,6 +328,28 @@ async def rename_category(
     )
 
 
+@router.post("/categories/{category_id}/delete", response_class=HTMLResponse)
+async def delete_category(
+    request: Request,
+    category_id: int,
+    merge_category_id: int | None = Form(default=None),
+    user: User | None = Depends(web_user),
+    session: AsyncSession = Depends(get_session),
+) -> HTMLResponse:
+    if not user:
+        raise HTTPException(status_code=401)
+    try:
+        await CategoryService(session).delete_or_merge(user.id, category_id, merge_category_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except PermissionError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    await session.commit()
+    return await _categories_panel_response(
+        request, user, session, labels(user.locale)["category_deleted_web"]
+    )
+
+
 async def _categories_panel_response(
     request: Request,
     user: User,
@@ -330,6 +357,10 @@ async def _categories_panel_response(
     message: str | None = None,
 ) -> HTMLResponse:
     categories = await CategoryService(session).list_categories(user.id)
+    expense_counts = {
+        category.id: await CategoryService(session).expense_count(user.id, category.id)
+        for category in categories
+    }
     return request.app.state.templates.TemplateResponse(
         request,
         "partials/categories_panel.html",
@@ -338,16 +369,17 @@ async def _categories_panel_response(
             "user": user,
             "t": labels(user.locale),
             "categories": categories,
-            "custom_categories": _custom_categories(categories),
+            "editable_categories": _editable_categories(categories),
             "default_categories": DEFAULT_CATEGORIES,
+            "expense_counts": expense_counts,
             "category_message": message,
             "refresh_selects": True,
         },
     )
 
 
-def _custom_categories(categories: list) -> list:
-    return [category for category in categories if not is_default_category(category.name)]
+def _editable_categories(categories: list) -> list:
+    return [category for category in categories if not is_protected_category(category.name)]
 
 
 def _parse_date(value: str | None, end_of_day: bool = False) -> datetime | None:

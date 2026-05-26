@@ -1,12 +1,18 @@
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.db.models import Category
+from app.db.models import Category, Expense
 from app.services.defaults import DEFAULT_CATEGORIES
+
+PROTECTED_CATEGORIES = {"General", "Income"}
 
 
 def is_default_category(name: str) -> bool:
     return name in DEFAULT_CATEGORIES
+
+
+def is_protected_category(name: str) -> bool:
+    return name in PROTECTED_CATEGORIES
 
 
 class CategoryService:
@@ -36,15 +42,49 @@ class CategoryService:
 
     async def rename(self, user_id: int, category_id: int, name: str) -> Category:
         category = await self.require_owned(user_id, category_id)
-        if is_default_category(category.name):
-            raise ValueError("Default categories cannot be renamed")
+        if is_protected_category(category.name):
+            raise ValueError("Protected categories cannot be renamed")
         category.name = name.strip()
         await self.session.flush()
         return category
 
     async def delete(self, user_id: int, category_id: int) -> None:
         category = await self.require_owned(user_id, category_id)
+        if is_protected_category(category.name):
+            raise ValueError("Protected categories cannot be deleted")
         await self.session.delete(category)
+
+    async def delete_or_merge(
+        self, user_id: int, category_id: int, merge_category_id: int | None = None
+    ) -> None:
+        category = await self.require_owned(user_id, category_id)
+        if is_protected_category(category.name):
+            raise ValueError("Protected categories cannot be deleted")
+
+        expense_count = await self.expense_count(user_id, category_id)
+        if expense_count:
+            if merge_category_id is None or merge_category_id == category_id:
+                raise ValueError("Choose a category to merge into")
+            target = await self.require_owned(user_id, merge_category_id)
+            if target.id == category.id:
+                raise ValueError("Choose another category to merge into")
+            if target.name == "Income":
+                raise ValueError("Expenses cannot be merged into Income")
+            await self.session.execute(
+                Expense.__table__.update()
+                .where(Expense.user_id == user_id, Expense.category_id == category_id)
+                .values(category_id=target.id)
+            )
+        await self.session.delete(category)
+
+    async def expense_count(self, user_id: int, category_id: int) -> int:
+        result = await self.session.execute(
+            select(func.count(Expense.id)).where(
+                Expense.user_id == user_id,
+                Expense.category_id == category_id,
+            )
+        )
+        return int(result.scalar_one())
 
     async def require_owned(self, user_id: int, category_id: int) -> Category:
         result = await self.session.execute(

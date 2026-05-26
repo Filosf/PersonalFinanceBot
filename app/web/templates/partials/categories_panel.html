@@ -16,16 +16,38 @@
   <div class="category-editor">
     <h3>{{ t.custom_categories }}</h3>
     <div class="category-editor-list">
-      {% for category in custom_categories %}
-      <form
-        class="category-edit-row"
-        hx-post="/categories/{{ category.id }}"
-        hx-target="#categories-panel"
-        hx-swap="outerHTML"
-      >
-        <input type="text" name="name" value="{{ category.name }}" maxlength="80" required>
-        <button type="submit">{{ t.rename }}</button>
-      </form>
+      {% for category in editable_categories %}
+      <div class="category-edit-row">
+        <form
+          class="category-rename-form"
+          hx-post="/categories/{{ category.id }}"
+          hx-target="#categories-panel"
+          hx-swap="outerHTML"
+        >
+          <input type="text" name="name" value="{{ category.name }}" maxlength="80" required>
+          <button type="submit">{{ t.rename }}</button>
+        </form>
+        <form
+          class="category-delete-form"
+          hx-post="/categories/{{ category.id }}/delete"
+          hx-target="#categories-panel"
+          hx-swap="outerHTML"
+          hx-confirm="{{ t.delete }}?"
+          title="{{ t.delete_empty_or_merge }}"
+        >
+          {% if expense_counts.get(category.id, 0) %}
+          <select name="merge_category_id" aria-label="{{ t.merge_into }}" required>
+            <option value="">{{ t.merge_into }}</option>
+            {% for target in categories %}
+              {% if target.id != category.id and target.name != "Income" %}
+              <option value="{{ target.id }}">{{ target.name|category_label(user.locale) }}</option>
+              {% endif %}
+            {% endfor %}
+          </select>
+          {% endif %}
+          <button type="submit" class="danger">{{ t.delete }}</button>
+        </form>
+      </div>
       {% else %}
       <p class="empty-inline">{{ t.no_categories }}</p>
       {% endfor %}

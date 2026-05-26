@@ -67,14 +67,16 @@ TRANSLATIONS = {
         "category_added": "Category added: {name}",
         "category_deleted": "Category deleted: {name}",
         "category_created": "Category created.",
+        "category_deleted_web": "Category deleted.",
         "category_renamed": "Category renamed.",
         "category_not_found": "Category not found",
         "category_updated": "Category updated",
-        "custom_categories": "Custom categories",
+        "custom_categories": "Editable categories",
         "deleted": "Deleted",
-        "help": (
+        "commands": (
             "/start - register\n"
-            "/help - help\n"
+            "/help - detailed help\n"
+            "/commands - command list\n"
             "/language - choose bot language\n"
             "/month or /month YYYY-MM - monthly income/expense report\n"
             "/range YYYY-MM-DD YYYY-MM-DD - income/expense report for dates\n"
@@ -83,11 +85,25 @@ TRANSLATIONS = {
             "/web - get a dashboard login link\n"
             "/budgets - monthly budget status\n"
             "/last - show last expense\n"
-            "/delete_last - delete last expense\n\n"
-            "Add an expense: 250 taxi, 120 food, or 70\n"
-            "Add income: +15000 salary\n\n"
-            "The dashboard lets you edit records, filter periods, manage categories, "
-            "set monthly budgets, and compare income vs expenses with charts."
+            "/delete_last - delete last expense"
+        ),
+        "help": (
+            "How to use the finance bot:\n\n"
+            "1. Add an expense by sending an amount and optional text:\n"
+            "250 taxi\n"
+            "120 food\n"
+            "70\n\n"
+            "2. Add income with a plus sign:\n"
+            "+15000 salary\n\n"
+            "3. The bot guesses a category from the text. You can change the category "
+            "using buttons after adding an expense, or edit everything on the website.\n\n"
+            "4. Use /month for this month, /month YYYY-MM for another month, and "
+            "/range YYYY-MM-DD YYYY-MM-DD for a custom period.\n\n"
+            "5. Use /budgets to see monthly budget progress. Budgets are configured "
+            "on the website.\n\n"
+            "6. Use /web to get a secure login link for the dashboard. The dashboard "
+            "has filters, charts, category editing, budget settings, and full record editing.\n\n"
+            "Use /commands when you only need the command list."
         ),
         "language": "Language",
         "language_updated": "Language updated.",
@@ -100,6 +116,7 @@ TRANSLATIONS = {
         "min": "Min",
         "month": "Month",
         "month_category_report": "Categories this month",
+        "menu_commands": "Commands",
         "menu_help": "Help",
         "menu_web": "Website",
         "new_category": "New category",
@@ -111,6 +128,8 @@ TRANSLATIONS = {
         "open_dashboard": "Open dashboard",
         "period": "Period",
         "rename": "Rename",
+        "merge_into": "Merge into",
+        "delete_empty_or_merge": "Delete if empty, or merge into selected category",
         "remaining": "left",
         "save": "Save",
         "search_description": "Search description",
@@ -191,14 +210,16 @@ TRANSLATIONS = {
         "category_added": "Категория добавлена: {name}",
         "category_deleted": "Категория удалена: {name}",
         "category_created": "Категория создана.",
+        "category_deleted_web": "Категория удалена.",
         "category_renamed": "Категория переименована.",
         "category_not_found": "Категория не найдена",
         "category_updated": "Категория обновлена",
-        "custom_categories": "Пользовательские категории",
+        "custom_categories": "Редактируемые категории",
         "deleted": "Удалено",
-        "help": (
+        "commands": (
             "/start - регистрация\n"
-            "/help - помощь\n"
+            "/help - подробная помощь\n"
+            "/commands или /команды - список команд\n"
             "/language или /язык - выбрать язык бота\n"
             "/month или /месяц YYYY-MM - отчет о доходах и расходах за месяц\n"
             "/range или /период YYYY-MM-DD YYYY-MM-DD - отчет о доходах и расходах за период\n"
@@ -207,12 +228,26 @@ TRANSLATIONS = {
             "/web или /сайт - ссылка для входа на сайт\n"
             "/budgets или /бюджеты - состояние бюджетов на месяц\n"
             "/last или /последний - последний расход\n"
-            "/delete_last или /удалить_последний - удалить последний расход\n\n"
-            "Добавить расход: 250 такси, 120 еда или 70\n"
-            "Добавить доход: +15000 зарплата\n\n"
-            "На сайте можно редактировать записи, фильтровать периоды, управлять "
-            "категориями, задавать месячные бюджеты и сравнивать доходы с расходами "
-            "на графиках."
+            "/delete_last или /удалить_последний - удалить последний расход"
+        ),
+        "help": (
+            "Как пользоваться ботом:\n\n"
+            "1. Чтобы добавить расход, просто отправьте сумму и описание:\n"
+            "250 такси\n"
+            "120 еда\n"
+            "70\n\n"
+            "2. Чтобы добавить доход, поставьте плюс перед суммой:\n"
+            "+15000 зарплата\n\n"
+            "3. Бот сам попробует выбрать категорию по тексту. После добавления расхода "
+            "категорию можно изменить кнопками. На сайте можно изменить сумму, дату, "
+            "категорию и описание.\n\n"
+            "4. Отчеты: /month покажет текущий месяц, /month YYYY-MM - другой месяц, "
+            "а /range YYYY-MM-DD YYYY-MM-DD - выбранный период.\n\n"
+            "5. Бюджеты: команда /budgets покажет, сколько уже потрачено и сколько "
+            "осталось. Настраиваются бюджеты на сайте.\n\n"
+            "6. Сайт открывается через /web. Там есть фильтры, графики, категории, "
+            "бюджеты и полное редактирование записей.\n\n"
+            "Если нужен только список команд, используйте /commands или /команды."
         ),
         "language": "Язык",
         "language_updated": "Язык обновлен.",
@@ -225,6 +260,7 @@ TRANSLATIONS = {
         "min": "Мин.",
         "month": "Месяц",
         "month_category_report": "Категории за месяц",
+        "menu_commands": "Команды",
         "menu_help": "Помощь",
         "menu_web": "Сайт",
         "new_category": "Новая категория",
@@ -236,6 +272,8 @@ TRANSLATIONS = {
         "open_dashboard": "Открыть панель",
         "period": "Период",
         "rename": "Переименовать",
+        "merge_into": "Слить в",
+        "delete_empty_or_merge": "Удалить пустую или слить в выбранную категорию",
         "remaining": "осталось",
         "save": "Сохранить",
         "search_description": "Поиск по описанию",

@@ -48,7 +48,15 @@ async def help_command(message: Message) -> None:
     async with SessionLocal() as session:
         user = await _ensure_user(session, message)
         await session.commit()
-    text = tr(user.locale, "help")
+    await message.answer(tr(user.locale, "help"), reply_markup=_main_menu(user.locale))
+
+
+@router.message(Command("commands"))
+async def commands_command(message: Message) -> None:
+    async with SessionLocal() as session:
+        user = await _ensure_user(session, message)
+        await session.commit()
+    text = tr(user.locale, "commands")
     if _is_admin(message):
         text = f"{text}\n\n{tr(user.locale, 'admin_help')}"
     await message.answer(text, reply_markup=_main_menu(user.locale))
@@ -57,6 +65,11 @@ async def help_command(message: Message) -> None:
 @router.message(F.text.startswith("/помощь"))
 async def help_command_ru(message: Message) -> None:
     await help_command(message)
+
+
+@router.message(F.text.startswith("/команды"))
+async def commands_command_ru(message: Message) -> None:
+    await commands_command(message)
 
 
 @router.message(Command("language"))
@@ -108,8 +121,13 @@ async def web_login_menu(message: Message) -> None:
     await web_login(message)
 
 
+@router.message(F.text.in_({tr("en", "menu_commands"), tr("ru", "menu_commands")}))
+async def commands_menu(message: Message) -> None:
+    await commands_command(message)
+
+
 @router.message(F.text.in_({tr("en", "menu_help"), tr("ru", "menu_help")}))
-async def help_menu(message: Message) -> None:
+async def legacy_help_menu(message: Message) -> None:
     await help_command(message)
 
 
@@ -554,7 +572,7 @@ def _main_menu(locale: str | None = None) -> ReplyKeyboardMarkup:
         keyboard=[
             [
                 KeyboardButton(text=tr(locale, "menu_web")),
-                KeyboardButton(text=tr(locale, "menu_help")),
+                KeyboardButton(text=tr(locale, "menu_commands")),
             ]
         ],
         resize_keyboard=True,

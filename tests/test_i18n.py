@@ -6,6 +6,12 @@ def test_normalize_locale_defaults_to_english() -> None:
     assert normalize_locale("fr") == "en"
 
 
+def test_commands_and_help_are_separate() -> None:
+    assert tr("en", "menu_commands") == "Commands"
+    assert "/commands" in tr("en", "commands")
+    assert "How to use" in tr("en", "help")
+
+
 def test_normalize_locale_detects_russian() -> None:
     assert normalize_locale("ru") == "ru"
     assert normalize_locale("ru-RU") == "ru"
