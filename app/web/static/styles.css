@@ -278,6 +278,17 @@ p {
   align-items: start;
 }
 
+.analytics-side-stack {
+  display: grid;
+  gap: 12px;
+  grid-column: 2;
+  grid-row: 1 / span 2;
+}
+
+.insights-card {
+  grid-column: 1;
+}
+
 .analytics-card {
   min-width: 0;
   background: var(--surface);
@@ -305,6 +316,23 @@ p {
   color: var(--text);
   font-size: 15px;
   font-weight: 700;
+}
+
+.card-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.card-title-row h3 {
+  margin: 0;
+}
+
+.month-select-form select {
+  min-height: 36px;
+  padding: 7px 34px 7px 10px;
 }
 
 .chart {
@@ -401,6 +429,47 @@ p {
   gap: 2px;
 }
 
+.panel-toggle-input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.panel-toggle {
+  display: inline-flex;
+  gap: 4px;
+  margin-bottom: 12px;
+  padding: 3px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-soft);
+}
+
+.panel-toggle label {
+  cursor: pointer;
+  border-radius: 6px;
+  padding: 7px 10px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+#analytics-panel-insights:checked ~ .panel-toggle label[for="analytics-panel-insights"],
+#analytics-panel-budgets:checked ~ .panel-toggle label[for="analytics-panel-budgets"] {
+  background: var(--surface);
+  color: var(--accent);
+  box-shadow: 0 1px 2px rgba(31, 41, 51, 0.08);
+}
+
+.panel-toggle-content {
+  display: none;
+}
+
+#analytics-panel-insights:checked ~ .insights-panel,
+#analytics-panel-budgets:checked ~ .budgets-panel {
+  display: block;
+}
+
 .insight-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) max-content;
@@ -416,6 +485,47 @@ p {
 .insight-row strong {
   text-align: right;
   font-variant-numeric: tabular-nums;
+}
+
+.budget-remainder-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) max-content;
+  gap: 8px 12px;
+  border-top: 1px solid var(--line);
+  padding: 10px 0;
+}
+
+.budget-remainder-row div {
+  display: grid;
+  gap: 2px;
+}
+
+.budget-remainder-row span,
+.budget-remainder-row em {
+  color: var(--muted);
+  font-size: 12px;
+  font-style: normal;
+}
+
+.budget-remainder-row em {
+  text-align: right;
+  font-weight: 700;
+}
+
+.budget-meter {
+  display: block;
+  grid-column: 1 / -1;
+  height: 7px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #e2e8f0;
+}
+
+.budget-meter span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--accent);
 }
 
 .monthly-category-chart {
@@ -799,6 +909,18 @@ td {
 
   .analytics-grid {
     display: grid;
+  }
+
+  .analytics-side-stack,
+  .insights-card {
+    grid-column: auto;
+    grid-row: auto;
+  }
+
+  .card-title-row,
+  .panel-toggle {
+    align-items: stretch;
+    flex-direction: column;
   }
 
   .category-edit-row {

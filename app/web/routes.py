@@ -1,4 +1,4 @@
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from datetime import timezone as fixed_timezone
 from decimal import Decimal, InvalidOperation
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
@@ -169,12 +169,13 @@ async def analytics(
     period: str = "month",
     date_from: str | None = None,
     date_to: str | None = None,
+    pie_month: str | None = None,
     user: User | None = Depends(web_user),
     session: AsyncSession = Depends(get_session),
 ) -> HTMLResponse:
     if not user:
         raise HTTPException(status_code=401)
-    context = await _analytics_context(user, session, period, date_from, date_to)
+    context = await _analytics_context(user, session, period, date_from, date_to, pie_month)
     return request.app.state.templates.TemplateResponse(
         request,
         "partials/analytics.html",
@@ -555,16 +556,26 @@ async def _analytics_context(
     period: str,
     date_from: str | None = None,
     date_to: str | None = None,
+    pie_month: str | None = None,
 ) -> dict:
     start_at, end_at, granularity = _period_range(user.timezone, period, date_from, date_to)
     service = ExpenseService(session)
     summary = await service.summary(user.id, start_at, end_at)
     cashflow = await service.cashflow_summary(user.id, start_at, end_at)
-    series = await service.cashflow_time_series(user.id, start_at, end_at, granularity)
+    series = _fill_cashflow_series(
+        await service.cashflow_time_series(user.id, start_at, end_at, granularity),
+        start_at,
+        end_at,
+        granularity,
+        user.timezone,
+        user.locale,
+    )
     user_now = datetime.now(_timezone(user.timezone))
-    month_start = user_now.date().replace(day=1)
-    month_start_at, month_end_at = _local_month_bounds(month_start, user.timezone)
+    current_month_start = user_now.date().replace(day=1)
+    selected_month_start = _selected_month_start(pie_month, current_month_start)
+    month_start_at, month_end_at = _local_month_bounds(selected_month_start, user.timezone)
     month_summary = await service.summary(user.id, month_start_at, month_end_at)
+    budget_lines = await BudgetService(session).report(user.id, current_month_start)
     max_total = max(
         (
             max(Decimal(item["income"]), Decimal(item["expense"]))
@@ -576,13 +587,26 @@ async def _analytics_context(
         "period": period,
         "date_from": start_at.date().isoformat(),
         "date_to": (end_at - timedelta(days=1)).date().isoformat(),
+        "date_from_label": _format_bucket_label(
+            start_at.astimezone(_timezone(user.timezone)).date(),
+            "day",
+            user.locale,
+        ),
+        "date_to_label": _format_bucket_label(
+            (end_at.astimezone(_timezone(user.timezone)) - timedelta(days=1)).date(),
+            "day",
+            user.locale,
+        ),
         "granularity": granularity,
         "summary": summary,
         "cashflow": cashflow,
         "month_summary": month_summary,
+        "pie_month": selected_month_start.strftime("%Y-%m"),
+        "pie_month_options": _month_options(current_month_start, user.locale),
         "month_pie": _pie_segments(month_summary["categories"]),
-        "category_summary": summary["categories"],
+        "category_summary": _category_summary_with_income_first(summary["categories"], cashflow),
         "insights": _analytics_insights(series, summary, cashflow, start_at, end_at),
+        "budget_lines": budget_lines,
         "series": series,
         "max_total": max_total,
     }
@@ -623,6 +647,102 @@ def _period_range(
         datetime.combine(end, datetime.min.time(), tzinfo=tz).astimezone(UTC),
         granularity,
     )
+
+
+def _fill_cashflow_series(
+    series: list[dict],
+    start_at: datetime,
+    end_at: datetime,
+    granularity: str,
+    timezone: str,
+    locale: str,
+) -> list[dict]:
+    tz = _timezone(timezone)
+    by_key = {_bucket_key(item["bucket"], granularity, tz): item for item in series}
+    start_date = start_at.astimezone(tz).date()
+    end_date = (end_at.astimezone(tz) - timedelta(days=1)).date()
+    if end_date < start_date:
+        end_date = start_date
+
+    buckets: list[date] = []
+    if granularity == "year":
+        cursor = date(start_date.year, 1, 1)
+        end_bucket = date(end_date.year, 1, 1)
+        while cursor <= end_bucket:
+            buckets.append(cursor)
+            cursor = date(cursor.year + 1, 1, 1)
+    elif granularity == "month":
+        cursor = start_date.replace(day=1)
+        end_bucket = end_date.replace(day=1)
+        while cursor <= end_bucket:
+            buckets.append(cursor)
+            cursor = _next_month(cursor)
+    else:
+        cursor = start_date
+        while cursor <= end_date:
+            buckets.append(cursor)
+            cursor += timedelta(days=1)
+
+    filled = []
+    for bucket in buckets:
+        existing = by_key.get(bucket)
+        bucket_datetime = datetime.combine(bucket, datetime.min.time(), tzinfo=tz)
+        item = {
+            "bucket": bucket_datetime,
+            "income": Decimal("0"),
+            "expense": Decimal("0"),
+            "count": 0,
+        }
+        if existing:
+            item.update(existing)
+            item["bucket"] = bucket_datetime
+        item["label"] = _format_bucket_label(bucket, granularity, locale)
+        filled.append(item)
+    return filled
+
+
+def _bucket_key(value: datetime, granularity: str, timezone) -> date:
+    local_date = value.astimezone(timezone).date() if value.tzinfo else value.date()
+    if granularity == "year":
+        return date(local_date.year, 1, 1)
+    if granularity == "month":
+        return local_date.replace(day=1)
+    return local_date
+
+
+def _selected_month_start(value: str | None, default: date) -> date:
+    if not value:
+        return default
+    try:
+        return month_start_from_iso(value)
+    except ValueError:
+        return default
+
+
+def _month_options(current_month: date, locale: str, count: int = 18) -> list[dict]:
+    options = []
+    cursor = current_month
+    for _ in range(count):
+        options.append(
+            {
+                "value": cursor.strftime("%Y-%m"),
+                "label": _format_bucket_label(cursor, "month", locale),
+            }
+        )
+        cursor = _previous_month(cursor)
+    return options
+
+
+def _next_month(value: date) -> date:
+    if value.month == 12:
+        return date(value.year + 1, 1, 1)
+    return date(value.year, value.month + 1, 1)
+
+
+def _previous_month(value: date) -> date:
+    if value.month == 1:
+        return date(value.year - 1, 12, 1)
+    return date(value.year, value.month - 1, 1)
 
 
 async def _budgets_context(
@@ -708,6 +828,18 @@ def _category_chart_color(category: str, index: int, fallback_colors: tuple[str,
     return fallback_colors[index % len(fallback_colors)]
 
 
+def _category_summary_with_income_first(categories: list[dict], cashflow: dict) -> list[dict]:
+    rows = [
+        {
+            "category": "Income",
+            "total": Decimal(cashflow["income"]),
+            "count": cashflow.get("income_count", 0),
+        }
+    ]
+    rows.extend(categories)
+    return rows
+
+
 def _analytics_insights(
     series: list[dict],
     summary: dict,
@@ -728,3 +860,46 @@ def _analytics_insights(
         "top_period": top_period,
         "top_category": top_category,
     }
+
+
+def _format_bucket_label(value: date, granularity: str, locale: str) -> str:
+    if granularity == "year":
+        return value.strftime("%Y")
+    month = _month_name(value.month, locale)
+    if granularity == "month":
+        return f"{month} {value.year}"
+    return f"{value.day:02d} {month}"
+
+
+def _month_name(month: int, locale: str) -> str:
+    if locale == "ru":
+        names = (
+            "Янв",
+            "Фев",
+            "Мар",
+            "Апр",
+            "Май",
+            "Июн",
+            "Июл",
+            "Авг",
+            "Сен",
+            "Окт",
+            "Ноя",
+            "Дек",
+        )
+    else:
+        names = (
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun",
+            "Jul",
+            "Aug",
+            "Sep",
+            "Oct",
+            "Nov",
+            "Dec",
+        )
+    return names[month - 1]

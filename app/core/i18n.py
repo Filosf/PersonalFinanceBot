@@ -48,6 +48,7 @@ TRANSLATIONS = {
             "No budgets are set for this month. Open the website to configure budgets."
         ),
         "budget_report_title": "Budgets for {month}",
+        "budget_remainders": "Budget remainders",
         "budgets": "Budgets",
         "budgets_saved": "Budgets saved.",
         "categories": "Categories",
@@ -204,6 +205,7 @@ TRANSLATIONS = {
             "На этот месяц бюджеты не настроены. Для настройки перейдите на сайт."
         ),
         "budget_report_title": "Бюджеты на {month}",
+        "budget_remainders": "Остатки по бюджетам",
         "budgets": "Бюджеты",
         "budgets_saved": "Бюджеты сохранены.",
         "categories": "Категории",

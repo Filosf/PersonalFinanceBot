@@ -1,16 +1,16 @@
 <div class="analytics-head">
   <div>
     <h2>{{ t.analytics }}</h2>
-    <p>{{ analytics.date_from }} - {{ analytics.date_to }}</p>
+    <p>{{ analytics.date_from_label }} - {{ analytics.date_to_label }}</p>
   </div>
   <div class="period-actions">
-    <button hx-get="/analytics?period=month" hx-target="#analytics" class="{% if analytics.period == 'month' %}active{% endif %}">
+    <button hx-get="/analytics?period=month&pie_month={{ analytics.pie_month }}" hx-target="#analytics" class="{% if analytics.period == 'month' %}active{% endif %}">
       {{ t.month }}
     </button>
-    <button hx-get="/analytics?period=year" hx-target="#analytics" class="{% if analytics.period == 'year' %}active{% endif %}">
+    <button hx-get="/analytics?period=year&pie_month={{ analytics.pie_month }}" hx-target="#analytics" class="{% if analytics.period == 'year' %}active{% endif %}">
       {{ t.year }}
     </button>
-    <button hx-get="/analytics?period=years" hx-target="#analytics" class="{% if analytics.period == 'years' %}active{% endif %}">
+    <button hx-get="/analytics?period=years&pie_month={{ analytics.pie_month }}" hx-target="#analytics" class="{% if analytics.period == 'years' %}active{% endif %}">
       {{ t.last_5_years }}
     </button>
   </div>
@@ -18,6 +18,7 @@
 
 <form class="custom-period" hx-get="/analytics" hx-target="#analytics">
   <input type="hidden" name="period" value="custom">
+  <input type="hidden" name="pie_month" value="{{ analytics.pie_month }}">
   <input type="date" name="date_from" value="{{ analytics.date_from }}" aria-label="{{ t.from_date }}">
   <input type="date" name="date_to" value="{{ analytics.date_to }}" aria-label="{{ t.to_date }}">
   <button type="submit">{{ t.apply }}</button>
@@ -60,15 +61,7 @@
           <div class="bar income-bar {% if item.income == 0 %}is-zero{% endif %}" style="height: {{ income_height }}px"></div>
           <div class="bar expense-bar {% if item.expense == 0 %}is-zero{% endif %}" style="height: {{ expense_height }}px"></div>
         </div>
-        <div class="bar-label">
-          {% if analytics.granularity == "year" %}
-            {{ item.bucket.strftime("%Y") }}
-          {% elif analytics.granularity == "month" %}
-            {{ item.bucket.strftime("%b %Y") }}
-          {% else %}
-            {{ item.bucket.strftime("%d %b") }}
-          {% endif %}
-        </div>
+        <div class="bar-label">{{ item.label }}</div>
       </div>
       {% else %}
       <div class="empty chart-empty">{{ t.no_expenses }}</div>
@@ -76,7 +69,21 @@
     </div>
   </div>
 
+  <div class="analytics-side-stack">
   <div class="analytics-card category-card">
+    <div class="card-title-row">
+      <h3>{{ t.expense_categories }}</h3>
+      <form class="month-select-form" hx-get="/analytics" hx-target="#analytics" hx-trigger="change">
+        <input type="hidden" name="period" value="{{ analytics.period }}">
+        <input type="hidden" name="date_from" value="{{ analytics.date_from }}">
+        <input type="hidden" name="date_to" value="{{ analytics.date_to }}">
+        <select name="pie_month" aria-label="{{ t.month }}">
+          {% for option in analytics.pie_month_options %}
+          <option value="{{ option.value }}" {% if option.value == analytics.pie_month %}selected{% endif %}>{{ option.label }}</option>
+          {% endfor %}
+        </select>
+      </form>
+    </div>
     <div class="monthly-category-chart">
       <div class="pie-chart" aria-label="{{ t.month_category_report }}">
         <svg class="pie-svg" viewBox="0 0 44 44" aria-hidden="true">
@@ -100,7 +107,6 @@
         <span class="pie-hole" aria-hidden="true"></span>
       </div>
       <div class="pie-legend">
-        <h3>{{ t.expense_categories }}</h3>
         {% for item in analytics.month_pie %}
         <div class="legend-row">
           <span class="legend-swatch" style="background: {{ item.color }}"></span>
@@ -110,48 +116,6 @@
         {% else %}
         <p>{{ t.no_expenses }}</p>
         {% endfor %}
-      </div>
-    </div>
-  </div>
-
-  <div class="analytics-card insights-card">
-    <h3>{{ t.insights }}</h3>
-    <div class="insights-list">
-      <div class="insight-row">
-        <span>{{ t.average_daily_expense }}</span>
-        <strong class="metric-expense">{{ "%.2f"|format(analytics.insights.average_daily_expense) }} {{ user.currency }}</strong>
-      </div>
-      <div class="insight-row">
-        <span>{{ t.biggest_expense_day }}</span>
-        <strong>
-          {% if analytics.insights.top_period %}
-            {% if analytics.granularity == "year" %}
-              {{ analytics.insights.top_period.bucket.strftime("%Y") }}
-            {% elif analytics.granularity == "month" %}
-              {{ analytics.insights.top_period.bucket.strftime("%b %Y") }}
-            {% else %}
-              {{ analytics.insights.top_period.bucket.strftime("%d %b") }}
-            {% endif %}
-            · {{ "%.2f"|format(analytics.insights.top_period.expense) }} {{ user.currency }}
-          {% else %}
-            —
-          {% endif %}
-        </strong>
-      </div>
-      <div class="insight-row">
-        <span>{{ t.biggest_category }}</span>
-        <strong>
-          {% if analytics.insights.top_category %}
-            {{ analytics.insights.top_category.category|category_label(user.locale) }}
-            · {{ "%.2f"|format(analytics.insights.top_category.total) }} {{ user.currency }}
-          {% else %}
-            —
-          {% endif %}
-        </strong>
-      </div>
-      <div class="insight-row">
-        <span>{{ t.active_expense_days }}</span>
-        <strong>{{ analytics.insights.active_expense_days }}</strong>
       </div>
     </div>
   </div>
@@ -172,4 +136,64 @@
     <p>{{ t.no_expenses }}</p>
     {% endfor %}
   </div>
+  </div>
+
+  <div class="analytics-card insights-card">
+    <input class="panel-toggle-input" type="radio" name="analytics-panel" id="analytics-panel-insights" checked>
+    <input class="panel-toggle-input" type="radio" name="analytics-panel" id="analytics-panel-budgets">
+    <div class="panel-toggle">
+      <label for="analytics-panel-insights">{{ t.insights }}</label>
+      <label for="analytics-panel-budgets">{{ t.budget_remainders }}</label>
+    </div>
+    <div class="panel-toggle-content insights-panel">
+      <div class="insights-list">
+        <div class="insight-row">
+          <span>{{ t.average_daily_expense }}</span>
+          <strong class="metric-expense">{{ "%.2f"|format(analytics.insights.average_daily_expense) }} {{ user.currency }}</strong>
+        </div>
+        <div class="insight-row">
+          <span>{{ t.biggest_expense_day }}</span>
+          <strong>
+            {% if analytics.insights.top_period %}
+              {{ analytics.insights.top_period.label }} - {{ "%.2f"|format(analytics.insights.top_period.expense) }} {{ user.currency }}
+            {% else %}
+              -
+            {% endif %}
+          </strong>
+        </div>
+        <div class="insight-row">
+          <span>{{ t.biggest_category }}</span>
+          <strong>
+            {% if analytics.insights.top_category %}
+              {{ analytics.insights.top_category.category|category_label(user.locale) }} - {{ "%.2f"|format(analytics.insights.top_category.total) }} {{ user.currency }}
+            {% else %}
+              -
+            {% endif %}
+          </strong>
+        </div>
+        <div class="insight-row">
+          <span>{{ t.active_expense_days }}</span>
+          <strong>{{ analytics.insights.active_expense_days }}</strong>
+        </div>
+      </div>
+    </div>
+    <div class="panel-toggle-content budgets-panel">
+      {% for line in analytics.budget_lines %}
+      {% set used_percent = 100 if line.ratio > 1 else (line.ratio * 100) %}
+      <div class="budget-remainder-row">
+        <div>
+          <strong>{{ line.category_name|category_label(user.locale) if line.category_name else t.total_budget }}</strong>
+          <span>{{ "%.2f"|format(line.spent) }} / {{ "%.2f"|format(line.amount) }} {{ user.currency }}</span>
+        </div>
+        <em class="{% if line.remaining < 0 %}metric-expense{% else %}metric-income{% endif %}">
+          {{ "%.2f"|format(line.remaining) }} {{ user.currency }} {{ t.remaining }}
+        </em>
+        <div class="budget-meter"><span style="width: {{ '%.2f'|format(used_percent) }}%"></span></div>
+      </div>
+      {% else %}
+      <p>{{ t.budget_report_empty }}</p>
+      {% endfor %}
+    </div>
+  </div>
+
 </div>

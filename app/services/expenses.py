@@ -194,6 +194,8 @@ class ExpenseService:
             "expense": expense["total"],
             "balance": income["total"] - expense["total"],
             "count": income["count"] + expense["count"],
+            "income_count": income["count"],
+            "expense_count": expense["count"],
         }
 
     async def time_series(
