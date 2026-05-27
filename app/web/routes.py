@@ -658,7 +658,8 @@ def _pie_segments(categories: list[dict]) -> list[dict]:
     total = sum((Decimal(item["total"]) for item in categories), Decimal("0"))
     if total <= 0:
         return []
-    gap = Decimal("0.18")
+    gap = Decimal("0.32")
+    half_gap = gap / Decimal("2")
     colors = (
         "#2563eb",
         "#dc2626",
@@ -679,8 +680,8 @@ def _pie_segments(categories: list[dict]) -> list[dict]:
         percent = (amount / total) * Decimal("100")
         start = cursor
         cursor += percent
-        gap_start = start + gap
-        gap_end = cursor - gap
+        gap_start = start + half_gap
+        gap_end = cursor - half_gap
         if index == 0:
             gap_start = start
         if index == last_index:
