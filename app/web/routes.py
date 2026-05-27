@@ -673,6 +673,7 @@ def _pie_segments(categories: list[dict]) -> list[dict]:
     )
     cursor = Decimal("0")
     segments = []
+    last_index = len(categories) - 1
     for index, item in enumerate(categories):
         amount = Decimal(item["total"])
         percent = (amount / total) * Decimal("100")
@@ -680,6 +681,10 @@ def _pie_segments(categories: list[dict]) -> list[dict]:
         cursor += percent
         gap_start = start + gap
         gap_end = cursor - gap
+        if index == 0:
+            gap_start = start
+        if index == last_index:
+            gap_end = cursor
         if gap_end <= gap_start:
             gap_start = start
             gap_end = cursor
