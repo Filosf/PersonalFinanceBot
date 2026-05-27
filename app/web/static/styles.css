@@ -1,14 +1,17 @@
 :root {
   color-scheme: light;
-  --bg: #f6f7f9;
+  --bg: #f3f5f8;
   --surface: #ffffff;
+  --surface-soft: #f9fbfc;
   --text: #1f2933;
   --muted: #697586;
   --line: #d8dee8;
   --accent: #0f766e;
+  --accent-soft: #e6f3f1;
   --income: #15803d;
   --expense: #b42318;
   --danger: #b42318;
+  --warning: #d97706;
 }
 
 * {
@@ -23,9 +26,9 @@ body {
 }
 
 .shell {
-  width: min(1360px, calc(100% - 32px));
+  width: min(1440px, calc(100% - 32px));
   margin: 0 auto;
-  padding: 28px 0 48px;
+  padding: 20px 0 48px;
 }
 
 .topbar,
@@ -41,8 +44,15 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 18px 20px;
-  margin-bottom: 16px;
+  padding: 16px 18px;
+  margin-bottom: 12px;
+  box-shadow: 0 1px 2px rgba(31, 41, 51, 0.04);
+}
+
+.dashboard-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 3;
 }
 
 .top-actions {
@@ -78,7 +88,8 @@ p {
 }
 
 h1 {
-  font-size: 28px;
+  font-size: 26px;
+  letter-spacing: 0;
 }
 
 h2 {
@@ -114,8 +125,13 @@ p {
 }
 
 .toolbar {
-  padding: 14px;
+  padding: 12px;
   margin-bottom: 16px;
+}
+
+.dashboard-stack {
+  display: grid;
+  gap: 14px;
 }
 
 .tabs > input {
@@ -130,7 +146,7 @@ p {
   gap: 2px;
   align-items: flex-end;
   border-bottom: 1px solid var(--line);
-  margin: 0 0 16px;
+  margin: 0 0 14px;
   padding-left: 6px;
 }
 
@@ -186,23 +202,32 @@ p {
   display: block;
 }
 
+.tab-panel.active.dashboard-stack {
+  display: grid;
+}
+
 .analytics-wrap {
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  padding: 16px;
-  margin-bottom: 16px;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  margin-bottom: 0;
 }
 
 .analytics-head,
 .custom-period,
 .metrics,
+.analytics-grid,
 .category-row,
 .legend-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+}
+
+.analytics-head {
+  padding: 2px 2px 0;
 }
 
 .period-actions,
@@ -212,7 +237,8 @@ p {
 
 .custom-period {
   justify-content: flex-start;
-  margin-top: 12px;
+  margin-top: 10px;
+  padding: 0 2px;
 }
 
 .custom-period input {
@@ -220,22 +246,49 @@ p {
 }
 
 .metrics {
-  justify-content: flex-start;
-  margin: 16px 0;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(150px, 1fr));
+  margin: 14px 0;
 }
 
 .metrics div {
-  min-width: 150px;
+  min-width: 0;
   border: 1px solid var(--line);
   border-radius: 8px;
-  padding: 10px 12px;
+  padding: 12px 14px;
+  background: var(--surface);
+  box-shadow: 0 1px 2px rgba(31, 41, 51, 0.04);
 }
 
 .metrics span {
   display: block;
   color: var(--muted);
   font-size: 12px;
-  margin-bottom: 4px;
+  margin-bottom: 6px;
+}
+
+.metrics strong {
+  display: block;
+  font-size: 17px;
+}
+
+.analytics-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(320px, 1fr);
+  align-items: stretch;
+}
+
+.analytics-card {
+  min-width: 0;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 14px;
+  box-shadow: 0 1px 2px rgba(31, 41, 51, 0.04);
+}
+
+.cashflow-card {
+  grid-row: span 2;
 }
 
 .chart {
@@ -244,23 +297,22 @@ p {
   grid-auto-columns: minmax(72px, 1fr);
   align-items: stretch;
   gap: 10px;
-  min-height: 230px;
+  min-height: 250px;
   overflow-x: auto;
-  border-top: 1px solid var(--line);
-  border-bottom: 1px solid var(--line);
-  padding: 16px 0 10px;
+  border: 0;
+  padding: 4px 0 0;
 }
 
 .bar-cell {
   display: grid;
-  grid-template-rows: 34px 150px 34px;
+  grid-template-rows: 38px 160px 34px;
   align-items: stretch;
   justify-items: center;
   min-width: 72px;
 }
 
 .paired-bar-cell {
-  grid-template-rows: 34px 150px 34px;
+  grid-template-rows: 38px 160px 34px;
 }
 
 .bar-value,
@@ -293,7 +345,7 @@ p {
   gap: 6px;
   align-items: end;
   justify-content: center;
-  height: 150px;
+  height: 160px;
   width: 100%;
 }
 
@@ -318,20 +370,20 @@ p {
 }
 
 .category-summary {
-  margin-top: 14px;
+  margin-top: 0;
 }
 
 .monthly-category-chart {
   display: grid;
-  grid-template-columns: 190px minmax(0, 1fr);
-  gap: 18px;
+  grid-template-columns: minmax(120px, 160px) minmax(0, 1fr);
+  gap: 16px;
   align-items: center;
-  border-bottom: 1px solid var(--line);
-  padding: 16px 0;
+  border-bottom: 0;
+  padding: 0;
 }
 
 .pie-chart {
-  width: 180px;
+  width: min(160px, 100%);
   aspect-ratio: 1;
   border-radius: 50%;
   background: #eef2f6;
@@ -377,7 +429,7 @@ p {
 }
 
 .filters {
-  grid-template-columns: repeat(7, minmax(110px, 1fr));
+  grid-template-columns: 150px 150px 180px 110px 110px minmax(180px, 1fr) max-content;
 }
 
 .grid {
@@ -390,7 +442,7 @@ p {
 }
 
 .add-expense-row {
-  margin-bottom: 16px;
+  margin-bottom: 0;
   overflow-x: auto;
 }
 
@@ -400,7 +452,8 @@ p {
   gap: 10px;
   align-items: center;
   min-width: 1080px;
-  padding: 10px 12px;
+  padding: 12px;
+  box-shadow: 0 1px 2px rgba(31, 41, 51, 0.04);
 }
 
 .add-row-form input,
@@ -532,6 +585,7 @@ button.danger {
 
 .table-wrap {
   overflow-x: auto;
+  box-shadow: 0 1px 2px rgba(31, 41, 51, 0.04);
 }
 
 table {
@@ -558,6 +612,7 @@ th {
   color: var(--muted);
   font-size: 12px;
   font-weight: 600;
+  background: var(--surface-soft);
 }
 
 td {
@@ -576,13 +631,17 @@ td {
   transition: background-color 0.15s ease, border-color 0.15s ease;
 }
 
+.row-form:hover {
+  background: #fbfcfd;
+}
+
 .row-form.dirty-row {
   background: #fff8e6;
-  border-left-color: #d97706;
+  border-left-color: var(--warning);
 }
 
 .row-form .dirty-field {
-  border-color: #d97706;
+  border-color: var(--warning);
   background: #fffbeb;
   box-shadow: 0 0 0 2px rgba(217, 119, 6, 0.14);
 }
@@ -615,10 +674,9 @@ td {
 @media (max-width: 860px) {
   .topbar,
   .top-actions,
-  .analytics-head,
   .monthly-category-chart,
   .custom-period,
-  .metrics,
+  .analytics-grid,
   .grid,
   .filters,
   .add-row-form,
@@ -632,10 +690,17 @@ td {
   }
 
   .top-actions,
-  .analytics-head,
-  .metrics {
+  .analytics-head {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .metrics {
+    grid-template-columns: 1fr;
+  }
+
+  .analytics-grid {
+    display: grid;
   }
 
   .category-edit-row {

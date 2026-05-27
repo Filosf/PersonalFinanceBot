@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block content %}
-<header class="topbar">
+<header class="topbar dashboard-topbar">
   <div>
     <h1>{{ t.expenses }}</h1>
     <p>
@@ -23,19 +23,19 @@
   </div>
 </header>
 
-<div class="tabs">
+<div class="tabs dashboard-tabs">
   <nav class="tab-nav" aria-label="{{ t.dashboard }}">
     <a class="tab-switch {% if active_tab == "analytics" %}active{% endif %}" href="/?tab=analytics" aria-current="{% if active_tab == "analytics" %}page{% else %}false{% endif %}">{{ t.tab_analytics }}</a>
     <a class="tab-switch {% if active_tab == "budgets" %}active{% endif %}" href="/?tab=budgets" aria-current="{% if active_tab == "budgets" %}page{% else %}false{% endif %}">{{ t.tab_budgets }}</a>
     <a class="tab-switch {% if active_tab == "categories" %}active{% endif %}" href="/?tab=categories" aria-current="{% if active_tab == "categories" %}page{% else %}false{% endif %}">{{ t.tab_categories }}</a>
   </nav>
 
-  <section class="tab-panel {% if active_tab == "analytics" %}active{% endif %}" {% if active_tab != "analytics" %}hidden{% endif %}>
+  <section class="tab-panel dashboard-stack {% if active_tab == "analytics" %}active{% endif %}" {% if active_tab != "analytics" %}hidden{% endif %}>
     <section id="analytics" class="analytics-wrap">
       {% include "partials/analytics.html" %}
     </section>
 
-    <section class="toolbar">
+    <section class="toolbar filters-toolbar">
       <form
         class="filters"
         hx-get="/expenses/table"
@@ -55,7 +55,7 @@
       </form>
     </section>
 
-    <section class="add-expense-row">
+    <section class="add-expense-row quick-add-row">
       <form
         class="panel add-row-form"
         hx-post="/expenses"
@@ -75,7 +75,7 @@
       </form>
     </section>
 
-    <section id="expenses-table" class="table-wrap">
+    <section id="expenses-table" class="table-wrap ledger-wrap">
       {% include "partials/expenses_table.html" %}
     </section>
   </section>
