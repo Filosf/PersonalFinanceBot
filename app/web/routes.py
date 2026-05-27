@@ -658,7 +658,7 @@ def _pie_segments(categories: list[dict]) -> list[dict]:
     total = sum((Decimal(item["total"]) for item in categories), Decimal("0"))
     if total <= 0:
         return []
-    gap = Decimal("0.35")
+    gap = Decimal("0.18")
     colors = (
         "#2563eb",
         "#dc2626",
