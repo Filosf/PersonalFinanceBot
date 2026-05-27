@@ -78,13 +78,25 @@
 
   <div class="analytics-card category-card">
     <div class="monthly-category-chart">
-      <div
-        class="pie-chart"
-        aria-label="{{ t.month_category_report }}"
-        {% if analytics.month_pie %}
-        style="background: conic-gradient({% for item in analytics.month_pie %}var(--surface-soft) {{ '%.2f'|format(item.start) }}% {{ '%.2f'|format(item.gap_start) }}%, {{ item.color }} {{ '%.2f'|format(item.gap_start) }}% {{ '%.2f'|format(item.gap_end) }}%, var(--surface-soft) {{ '%.2f'|format(item.gap_end) }}% {{ '%.2f'|format(item.end) }}%{% if not loop.last %}, {% endif %}{% endfor %});"
-        {% endif %}
-      >
+      <div class="pie-chart" aria-label="{{ t.month_category_report }}">
+        <svg class="pie-svg" viewBox="0 0 44 44" aria-hidden="true">
+          <circle class="pie-track" cx="22" cy="22" r="15.9155"></circle>
+          <g transform="rotate(-90 22 22)">
+            {% for item in analytics.month_pie %}
+            {% set arc = item.gap_end - item.gap_start %}
+            <circle
+              class="pie-segment"
+              cx="22"
+              cy="22"
+              r="15.9155"
+              pathLength="100"
+              stroke="{{ item.color }}"
+              stroke-dasharray="{{ '%.2f'|format(arc) }} {{ '%.2f'|format(100 - arc) }}"
+              stroke-dashoffset="{{ '%.2f'|format(0 - item.gap_start) }}"
+            ></circle>
+            {% endfor %}
+          </g>
+        </svg>
         <span class="pie-hole" aria-hidden="true"></span>
       </div>
       <div class="pie-legend">

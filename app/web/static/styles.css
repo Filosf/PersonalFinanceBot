@@ -407,11 +407,33 @@ p {
   width: min(180px, 100%);
   aspect-ratio: 1;
   border-radius: 50%;
-  background: #eef2f6;
+  background: transparent;
   border: 0;
   box-shadow:
-    inset 0 0 0 1px rgba(15, 23, 42, 0.06),
     0 18px 32px rgba(15, 23, 42, 0.12);
+}
+
+.pie-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.pie-track,
+.pie-segment {
+  fill: none;
+  stroke-width: 8;
+}
+
+.pie-track {
+  stroke: var(--surface-soft);
+}
+
+.pie-segment {
+  stroke-linecap: butt;
+  shape-rendering: geometricPrecision;
 }
 
 .pie-hole {
