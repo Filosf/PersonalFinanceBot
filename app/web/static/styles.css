@@ -275,7 +275,7 @@ p {
 .analytics-grid {
   display: grid;
   grid-template-columns: minmax(0, 2fr) minmax(320px, 1fr);
-  align-items: stretch;
+  align-items: start;
 }
 
 .analytics-card {
@@ -307,32 +307,30 @@ p {
   font-weight: 700;
 }
 
-.cashflow-card {
-  grid-row: span 2;
-}
-
 .chart {
   display: grid;
   grid-auto-flow: column;
   grid-auto-columns: minmax(72px, 1fr);
-  align-items: stretch;
+  align-items: end;
   gap: 10px;
-  min-height: 250px;
+  min-height: 292px;
   overflow-x: auto;
   border: 0;
-  padding: 4px 0 0;
+  padding: 10px 0 0;
+  background:
+    linear-gradient(to top, rgba(100, 116, 139, 0.1) 1px, transparent 1px) 0 44px / 100% 52px;
 }
 
 .bar-cell {
   display: grid;
-  grid-template-rows: 38px 160px 34px;
+  grid-template-rows: 34px 220px 28px;
   align-items: stretch;
   justify-items: center;
   min-width: 72px;
 }
 
 .paired-bar-cell {
-  grid-template-rows: 38px 160px 34px;
+  grid-template-rows: 34px 220px 28px;
 }
 
 .bar-value,
@@ -365,7 +363,7 @@ p {
   gap: 6px;
   align-items: end;
   justify-content: center;
-  height: 160px;
+  height: 220px;
   width: 100%;
 }
 
@@ -375,6 +373,11 @@ p {
   min-height: 8px;
   border-radius: 6px 6px 0 0;
   background: var(--accent);
+}
+
+.bar.is-zero {
+  min-height: 0;
+  opacity: 0;
 }
 
 .income-bar {
@@ -391,6 +394,28 @@ p {
 
 .category-summary {
   margin-top: 0;
+}
+
+.insights-list {
+  display: grid;
+  gap: 2px;
+}
+
+.insight-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) max-content;
+  gap: 12px;
+  border-top: 1px solid var(--line);
+  padding: 9px 0;
+}
+
+.insight-row span {
+  color: var(--muted);
+}
+
+.insight-row strong {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
 }
 
 .monthly-category-chart {
@@ -485,6 +510,16 @@ p {
 .category-row {
   border-top: 1px solid var(--line);
   padding: 8px 0;
+}
+
+.category-row span {
+  display: grid;
+  gap: 2px;
+}
+
+.category-row small {
+  color: var(--muted);
+  font-size: 11px;
 }
 
 .filters,

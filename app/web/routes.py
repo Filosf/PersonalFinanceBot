@@ -565,7 +565,6 @@ async def _analytics_context(
     month_start = user_now.date().replace(day=1)
     month_start_at, month_end_at = _local_month_bounds(month_start, user.timezone)
     month_summary = await service.summary(user.id, month_start_at, month_end_at)
-    month_cashflow = await service.cashflow_summary(user.id, month_start_at, month_end_at)
     max_total = max(
         (
             max(Decimal(item["income"]), Decimal(item["expense"]))
@@ -581,12 +580,9 @@ async def _analytics_context(
         "summary": summary,
         "cashflow": cashflow,
         "month_summary": month_summary,
-        "month_pie": _pie_segments(
-            _category_summary_with_income(month_summary["categories"], month_cashflow["income"])
-        ),
-        "category_summary": _category_summary_with_income(
-            summary["categories"], cashflow["income"]
-        ),
+        "month_pie": _pie_segments(month_summary["categories"]),
+        "category_summary": summary["categories"],
+        "insights": _analytics_insights(series, summary, cashflow, start_at, end_at),
         "series": series,
         "max_total": max_total,
     }
@@ -712,8 +708,23 @@ def _category_chart_color(category: str, index: int, fallback_colors: tuple[str,
     return fallback_colors[index % len(fallback_colors)]
 
 
-def _category_summary_with_income(categories: list[dict], income: Decimal) -> list[dict]:
-    rows = list(categories)
-    if income > 0:
-        rows.append({"category": "Income", "total": income, "count": 0})
-    return rows
+def _analytics_insights(
+    series: list[dict],
+    summary: dict,
+    cashflow: dict,
+    start_at: datetime,
+    end_at: datetime,
+) -> dict:
+    days = max((end_at.date() - start_at.date()).days, 1)
+    expense = Decimal(cashflow["expense"])
+    top_period = max(series, key=lambda item: Decimal(item["expense"]), default=None)
+    if top_period and Decimal(top_period["expense"]) <= 0:
+        top_period = None
+    categories = summary["categories"]
+    top_category = max(categories, key=lambda item: Decimal(item["total"]), default=None)
+    return {
+        "average_daily_expense": expense / Decimal(days),
+        "active_expense_days": sum(1 for item in series if Decimal(item["expense"]) > 0),
+        "top_period": top_period,
+        "top_category": top_category,
+    }

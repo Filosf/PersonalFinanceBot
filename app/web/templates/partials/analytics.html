@@ -49,16 +49,16 @@
     <h3>{{ t.total_income }} / {{ t.total_expense }}</h3>
     <div class="chart" aria-label="{{ t.analytics }}">
       {% for item in analytics.series %}
-      {% set income_height = 8 if analytics.max_total == 0 else (item.income / analytics.max_total * 140) %}
-      {% set expense_height = 8 if analytics.max_total == 0 else (item.expense / analytics.max_total * 140) %}
+      {% set income_height = 0 if item.income == 0 or analytics.max_total == 0 else (item.income / analytics.max_total * 210) %}
+      {% set expense_height = 0 if item.expense == 0 or analytics.max_total == 0 else (item.expense / analytics.max_total * 210) %}
       <div class="bar-cell paired-bar-cell">
         <div class="paired-values">
-          <span class="income-text">{{ "%.0f"|format(item.income) }}</span>
-          <span class="expense-text">{{ "%.0f"|format(item.expense) }}</span>
+          <span class="income-text">{% if item.income > 0 %}{{ "%.0f"|format(item.income) }}{% endif %}</span>
+          <span class="expense-text">{% if item.expense > 0 %}{{ "%.0f"|format(item.expense) }}{% endif %}</span>
         </div>
         <div class="bar-pair">
-          <div class="bar income-bar" style="height: {{ income_height }}px"></div>
-          <div class="bar expense-bar" style="height: {{ expense_height }}px"></div>
+          <div class="bar income-bar {% if item.income == 0 %}is-zero{% endif %}" style="height: {{ income_height }}px"></div>
+          <div class="bar expense-bar {% if item.expense == 0 %}is-zero{% endif %}" style="height: {{ expense_height }}px"></div>
         </div>
         <div class="bar-label">
           {% if analytics.granularity == "year" %}
@@ -100,7 +100,7 @@
         <span class="pie-hole" aria-hidden="true"></span>
       </div>
       <div class="pie-legend">
-        <h3>{{ t.month_category_report }}</h3>
+        <h3>{{ t.expense_categories }}</h3>
         {% for item in analytics.month_pie %}
         <div class="legend-row">
           <span class="legend-swatch" style="background: {{ item.color }}"></span>
@@ -114,11 +114,56 @@
     </div>
   </div>
 
+  <div class="analytics-card insights-card">
+    <h3>{{ t.insights }}</h3>
+    <div class="insights-list">
+      <div class="insight-row">
+        <span>{{ t.average_daily_expense }}</span>
+        <strong class="metric-expense">{{ "%.2f"|format(analytics.insights.average_daily_expense) }} {{ user.currency }}</strong>
+      </div>
+      <div class="insight-row">
+        <span>{{ t.biggest_expense_day }}</span>
+        <strong>
+          {% if analytics.insights.top_period %}
+            {% if analytics.granularity == "year" %}
+              {{ analytics.insights.top_period.bucket.strftime("%Y") }}
+            {% elif analytics.granularity == "month" %}
+              {{ analytics.insights.top_period.bucket.strftime("%b %Y") }}
+            {% else %}
+              {{ analytics.insights.top_period.bucket.strftime("%d %b") }}
+            {% endif %}
+            · {{ "%.2f"|format(analytics.insights.top_period.expense) }} {{ user.currency }}
+          {% else %}
+            —
+          {% endif %}
+        </strong>
+      </div>
+      <div class="insight-row">
+        <span>{{ t.biggest_category }}</span>
+        <strong>
+          {% if analytics.insights.top_category %}
+            {{ analytics.insights.top_category.category|category_label(user.locale) }}
+            · {{ "%.2f"|format(analytics.insights.top_category.total) }} {{ user.currency }}
+          {% else %}
+            —
+          {% endif %}
+        </strong>
+      </div>
+      <div class="insight-row">
+        <span>{{ t.active_expense_days }}</span>
+        <strong>{{ analytics.insights.active_expense_days }}</strong>
+      </div>
+    </div>
+  </div>
+
   <div class="analytics-card category-summary">
     <h3>{{ t.by_category }}</h3>
     {% for item in analytics.category_summary %}
     <div class="category-row">
-      <span>{{ item.category|category_label(user.locale) }}</span>
+      <span>
+        {{ item.category|category_label(user.locale) }}
+        <small>{{ item.count }} {{ t.operations }}</small>
+      </span>
       <strong class="{% if item.category == 'Income' %}metric-income{% else %}metric-expense{% endif %}">
         {{ "%.2f"|format(item.total) }} {{ user.currency }}
       </strong>
