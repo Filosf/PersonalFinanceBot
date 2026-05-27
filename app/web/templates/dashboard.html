@@ -9,6 +9,16 @@
     </p>
   </div>
   <div class="top-actions">
+    <form method="post" action="/currency" class="currency-form">
+      <span>{{ t.currency }}</span>
+      <input type="hidden" name="tab" value="{{ active_tab }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <select name="currency" onchange="this.form.submit()" aria-label="{{ t.currency }}">
+        {% for currency_option in ["ILS", "USD", "EUR", "RUB"] %}
+        <option value="{{ currency_option }}" {% if user.currency == currency_option %}selected{% endif %}>{{ currency_option }}</option>
+        {% endfor %}
+      </select>
+    </form>
     <form method="post" action="/language" class="language-form">
       <span>{{ t.language }}</span>
       <input id="language-tab" type="hidden" name="tab" value="{{ active_tab }}">
@@ -22,6 +32,10 @@
     </form>
   </div>
 </header>
+
+{% if currency_message %}
+<p class="status-message dashboard-message">{{ t.currency_updated }}</p>
+{% endif %}
 
 <div class="tabs dashboard-tabs">
   <nav class="tab-nav" aria-label="{{ t.dashboard }}">

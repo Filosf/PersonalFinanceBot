@@ -1,9 +1,9 @@
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
 from app.core.i18n import normalize_locale
-from app.db.models import Category, User
+from app.db.models import Category, Expense, User
 from app.services.defaults import DEFAULT_CATEGORIES
 
 
@@ -52,5 +52,15 @@ class UserService:
         result = await self.session.execute(select(User).where(User.id == user_id))
         user = result.scalar_one()
         user.locale = normalize_locale(locale)
+        await self.session.flush()
+        return user
+
+    async def set_currency(self, user_id: int, currency: str) -> User:
+        result = await self.session.execute(select(User).where(User.id == user_id))
+        user = result.scalar_one()
+        user.currency = currency.strip().upper()[:8]
+        await self.session.execute(
+            update(Expense).where(Expense.user_id == user_id).values(currency=user.currency)
+        )
         await self.session.flush()
         return user

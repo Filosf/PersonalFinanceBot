@@ -5,7 +5,7 @@
   <p class="status-message">{{ budget_message }}</p>
   {% endif %}
 
-  <form hx-post="/budgets" hx-target="#budgets-panel" hx-swap="outerHTML">
+  <form class="dirty-track-form" hx-post="/budgets" hx-target="#budgets-panel" hx-swap="outerHTML">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
     <label>
       {{ t.month }}

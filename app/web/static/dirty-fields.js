@@ -6,7 +6,7 @@ function normalizeValue(field) {
 }
 
 function initializeDirtyTracking(root = document) {
-  root.querySelectorAll(".row-form").forEach((form) => {
+  root.querySelectorAll(".row-form, .dirty-track-form, form[data-dirty-track='true']").forEach((form) => {
     form.querySelectorAll("input[name], select[name], textarea[name]").forEach((field) => {
       field.dataset.initialValue = normalizeValue(field);
       field.classList.remove("dirty-field");
@@ -28,15 +28,26 @@ function updateDirtyState(form) {
 document.addEventListener("DOMContentLoaded", () => initializeDirtyTracking());
 
 document.addEventListener("input", (event) => {
-  const form = event.target.closest(".row-form");
+  const form = event.target.closest(".row-form, .dirty-track-form, form[data-dirty-track='true']");
   if (form) updateDirtyState(form);
 });
 
 document.addEventListener("change", (event) => {
-  const form = event.target.closest(".row-form");
+  const form = event.target.closest(".row-form, .dirty-track-form, form[data-dirty-track='true']");
   if (form) updateDirtyState(form);
 });
 
+function scrollChartsToEnd(root = document) {
+  root.querySelectorAll("[data-scroll-end='true']").forEach((chart) => {
+    requestAnimationFrame(() => {
+      chart.scrollLeft = chart.scrollWidth;
+    });
+  });
+}
+
+document.addEventListener("DOMContentLoaded", () => scrollChartsToEnd());
+
 document.body.addEventListener("htmx:afterSwap", (event) => {
   initializeDirtyTracking(event.detail.target);
+  scrollChartsToEnd(event.detail.target);
 });

@@ -5,7 +5,7 @@
   <p class="status-message">{{ category_message }}</p>
   {% endif %}
 
-  <form hx-post="/categories" hx-target="#categories-panel" hx-swap="outerHTML">
+  <form class="dirty-track-form" hx-post="/categories" hx-target="#categories-panel" hx-swap="outerHTML">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
     <label>
       {{ t.new_category }}
@@ -22,6 +22,7 @@
         {% set expense_count = expense_counts.get(category.id, 0) %}
         <form
           class="category-rename-form"
+          data-dirty-track="true"
           hx-post="/categories/{{ category.id }}"
           hx-target="#categories-panel"
           hx-swap="outerHTML"
@@ -39,6 +40,7 @@
         </form>
         <form
           class="category-delete-form"
+          data-dirty-track="true"
           hx-post="/categories/{{ category.id }}/delete"
           hx-target="#categories-panel"
           hx-swap="outerHTML"

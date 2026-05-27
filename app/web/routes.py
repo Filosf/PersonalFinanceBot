@@ -43,6 +43,7 @@ async def web_user(request: Request, session: AsyncSession = Depends(get_session
 async def index(
     request: Request,
     tab: str = "analytics",
+    currency_message: str | None = None,
     user: User | None = Depends(web_user),
     session: AsyncSession = Depends(get_session),
 ) -> HTMLResponse:
@@ -81,6 +82,7 @@ async def index(
             "analytics": analytics,
             "budgets": budgets,
             "active_tab": _normalize_tab(tab),
+            "currency_message": currency_message,
             "csrf_token": csrf_token,
         },
     )
@@ -163,6 +165,29 @@ async def language(
     )
 
 
+@router.post("/currency")
+async def currency(
+    request: Request,
+    currency: str = Form(),
+    tab: str = Form(default="analytics"),
+    csrf_token: str = Form(default=""),
+    user: User | None = Depends(web_user),
+    session: AsyncSession = Depends(get_session),
+) -> RedirectResponse:
+    if not user:
+        raise HTTPException(status_code=401)
+    _require_csrf(request, csrf_token)
+    normalized = currency.strip().upper()
+    if normalized not in {"ILS", "USD", "EUR", "RUB"}:
+        raise HTTPException(status_code=400, detail="Unsupported currency")
+    await UserService(session).set_currency(user.id, normalized)
+    await session.commit()
+    return RedirectResponse(
+        f"/?tab={_normalize_tab(tab)}&currency_message=1",
+        status_code=status.HTTP_303_SEE_OTHER,
+    )
+
+
 @router.get("/analytics", response_class=HTMLResponse)
 async def analytics(
     request: Request,
@@ -170,12 +195,21 @@ async def analytics(
     date_from: str | None = None,
     date_to: str | None = None,
     pie_month: str | None = None,
+    pie_month_month: int | None = None,
+    pie_month_year: int | None = None,
     user: User | None = Depends(web_user),
     session: AsyncSession = Depends(get_session),
 ) -> HTMLResponse:
     if not user:
         raise HTTPException(status_code=401)
-    context = await _analytics_context(user, session, period, date_from, date_to, pie_month)
+    context = await _analytics_context(
+        user,
+        session,
+        period,
+        date_from,
+        date_to,
+        _combine_month(pie_month, pie_month_year, pie_month_month),
+    )
     return request.app.state.templates.TemplateResponse(
         request,
         "partials/analytics.html",
@@ -602,7 +636,10 @@ async def _analytics_context(
         "cashflow": cashflow,
         "month_summary": month_summary,
         "pie_month": selected_month_start.strftime("%Y-%m"),
-        "pie_month_options": _month_options(current_month_start, user.locale),
+        "pie_month_month": selected_month_start.month,
+        "pie_month_year": selected_month_start.year,
+        "pie_month_month_options": _month_options(user.locale),
+        "pie_month_year_options": _year_options(current_month_start),
         "month_pie": _pie_segments(month_summary["categories"]),
         "category_summary": _category_summary_with_income_first(summary["categories"], cashflow),
         "insights": _analytics_insights(series, summary, cashflow, start_at, end_at),
@@ -719,30 +756,27 @@ def _selected_month_start(value: str | None, default: date) -> date:
         return default
 
 
-def _month_options(current_month: date, locale: str, count: int = 18) -> list[dict]:
-    options = []
-    cursor = current_month
-    for _ in range(count):
-        options.append(
-            {
-                "value": cursor.strftime("%Y-%m"),
-                "label": _format_bucket_label(cursor, "month", locale),
-            }
-        )
-        cursor = _previous_month(cursor)
-    return options
+def _combine_month(value: str | None, year: int | None, month: int | None) -> str | None:
+    if year and month and 1 <= month <= 12:
+        return f"{year:04d}-{month:02d}"
+    return value
+
+
+def _month_options(locale: str) -> list[dict]:
+    return [
+        {"value": month, "label": _month_name(month, locale)}
+        for month in range(1, 13)
+    ]
+
+
+def _year_options(current_month: date, count: int = 6) -> list[int]:
+    return [current_month.year - offset for offset in range(count)]
 
 
 def _next_month(value: date) -> date:
     if value.month == 12:
         return date(value.year + 1, 1, 1)
     return date(value.year, value.month + 1, 1)
-
-
-def _previous_month(value: date) -> date:
-    if value.month == 1:
-        return date(value.year - 1, 12, 1)
-    return date(value.year, value.month - 1, 1)
 
 
 async def _budgets_context(

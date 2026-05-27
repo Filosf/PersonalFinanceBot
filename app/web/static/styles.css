@@ -61,12 +61,18 @@ body {
   gap: 10px;
 }
 
+.currency-form,
 .language-form {
   display: flex;
   align-items: center;
   gap: 6px;
   color: var(--muted);
   font-size: 13px;
+}
+
+.currency-form select {
+  min-height: 38px;
+  padding: 8px 32px 8px 10px;
 }
 
 .language-form button,
@@ -79,6 +85,10 @@ body {
 .period-actions button.active {
   background: var(--accent);
   color: #fff;
+}
+
+.dashboard-message {
+  margin: -6px 0 12px;
 }
 
 h1,
@@ -330,6 +340,11 @@ p {
   margin: 0;
 }
 
+.month-select-form {
+  display: inline-flex;
+  gap: 6px;
+}
+
 .month-select-form select {
   min-height: 36px;
   padding: 7px 34px 7px 10px;
@@ -513,7 +528,7 @@ p {
 }
 
 .budget-meter {
-  display: block;
+  display: flex;
   grid-column: 1 / -1;
   height: 7px;
   overflow: hidden;
@@ -524,8 +539,19 @@ p {
 .budget-meter span {
   display: block;
   height: 100%;
-  border-radius: inherit;
   background: var(--accent);
+}
+
+.budget-meter span:first-child {
+  border-radius: 999px 0 0 999px;
+}
+
+.budget-meter span:last-child {
+  border-radius: 0 999px 999px 0;
+}
+
+.budget-meter .budget-overrun {
+  background: var(--expense);
 }
 
 .monthly-category-chart {
@@ -901,6 +927,11 @@ td {
   .analytics-head {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .currency-form,
+  .language-form {
+    justify-content: flex-start;
   }
 
   .metrics {

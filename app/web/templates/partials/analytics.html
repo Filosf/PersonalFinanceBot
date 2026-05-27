@@ -48,7 +48,7 @@
 <div class="analytics-grid">
   <div class="analytics-card cashflow-card">
     <h3>{{ t.total_income }} / {{ t.total_expense }}</h3>
-    <div class="chart" aria-label="{{ t.analytics }}">
+    <div class="chart cashflow-chart" data-scroll-end="true" aria-label="{{ t.analytics }}">
       {% for item in analytics.series %}
       {% set income_height = 0 if item.income == 0 or analytics.max_total == 0 else (item.income / analytics.max_total * 210) %}
       {% set expense_height = 0 if item.expense == 0 or analytics.max_total == 0 else (item.expense / analytics.max_total * 210) %}
@@ -77,9 +77,14 @@
         <input type="hidden" name="period" value="{{ analytics.period }}">
         <input type="hidden" name="date_from" value="{{ analytics.date_from }}">
         <input type="hidden" name="date_to" value="{{ analytics.date_to }}">
-        <select name="pie_month" aria-label="{{ t.month }}">
-          {% for option in analytics.pie_month_options %}
-          <option value="{{ option.value }}" {% if option.value == analytics.pie_month %}selected{% endif %}>{{ option.label }}</option>
+        <select name="pie_month_month" aria-label="{{ t.month }}">
+          {% for option in analytics.pie_month_month_options %}
+          <option value="{{ option.value }}" {% if option.value == analytics.pie_month_month %}selected{% endif %}>{{ option.label }}</option>
+          {% endfor %}
+        </select>
+        <select name="pie_month_year" aria-label="{{ t.year }}">
+          {% for option in analytics.pie_month_year_options %}
+          <option value="{{ option }}" {% if option == analytics.pie_month_year %}selected{% endif %}>{{ option }}</option>
           {% endfor %}
         </select>
       </form>
@@ -180,6 +185,8 @@
     <div class="panel-toggle-content budgets-panel">
       {% for line in analytics.budget_lines %}
       {% set used_percent = 100 if line.ratio > 1 else (line.ratio * 100) %}
+      {% set budget_share = (line.amount / line.spent * 100) if line.spent > line.amount and line.spent > 0 else 100 %}
+      {% set overrun_share = 100 - budget_share %}
       <div class="budget-remainder-row">
         <div>
           <strong>{{ line.category_name|category_label(user.locale) if line.category_name else t.total_budget }}</strong>
@@ -188,7 +195,14 @@
         <em class="{% if line.remaining < 0 %}metric-expense{% else %}metric-income{% endif %}">
           {{ "%.2f"|format(line.remaining) }} {{ user.currency }} {{ t.remaining }}
         </em>
-        <div class="budget-meter"><span style="width: {{ '%.2f'|format(used_percent) }}%"></span></div>
+        <div class="budget-meter">
+          {% if line.spent > line.amount and line.spent > 0 %}
+          <span class="budget-used" style="width: {{ '%.2f'|format(budget_share) }}%"></span>
+          <span class="budget-overrun" style="width: {{ '%.2f'|format(overrun_share) }}%"></span>
+          {% else %}
+          <span class="budget-used" style="width: {{ '%.2f'|format(used_percent) }}%"></span>
+          {% endif %}
+        </div>
       </div>
       {% else %}
       <p>{{ t.budget_report_empty }}</p>
