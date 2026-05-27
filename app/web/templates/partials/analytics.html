@@ -46,6 +46,7 @@
 
 <div class="analytics-grid">
   <div class="analytics-card cashflow-card">
+    <h3>{{ t.total_income }} / {{ t.total_expense }}</h3>
     <div class="chart" aria-label="{{ t.analytics }}">
       {% for item in analytics.series %}
       {% set income_height = 8 if analytics.max_total == 0 else (item.income / analytics.max_total * 140) %}
@@ -81,7 +82,7 @@
         class="pie-chart"
         aria-label="{{ t.month_category_report }}"
         {% if analytics.month_pie %}
-        style="background: conic-gradient({% for item in analytics.month_pie %}{{ item.color }} {{ '%.2f'|format(item.start) }}% {{ '%.2f'|format(item.end) }}%{% if not loop.last %}, {% endif %}{% endfor %});"
+        style="background: conic-gradient({% for item in analytics.month_pie %}var(--surface) {{ '%.2f'|format(item.start) }}% {{ '%.2f'|format(item.gap_start) }}%, {{ item.color }} {{ '%.2f'|format(item.gap_start) }}% {{ '%.2f'|format(item.gap_end) }}%, var(--surface) {{ '%.2f'|format(item.gap_end) }}% {{ '%.2f'|format(item.end) }}%{% if not loop.last %}, {% endif %}{% endfor %});"
         {% endif %}
       ></div>
       <div class="pie-legend">

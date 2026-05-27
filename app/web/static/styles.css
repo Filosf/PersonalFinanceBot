@@ -287,6 +287,26 @@ p {
   box-shadow: 0 1px 2px rgba(31, 41, 51, 0.04);
 }
 
+.filters-toolbar,
+.quick-add-row,
+.ledger-wrap {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px 14px 14px;
+  box-shadow: 0 1px 2px rgba(31, 41, 51, 0.04);
+}
+
+.analytics-card h3,
+.filters-toolbar h2,
+.quick-add-row h2,
+.ledger-wrap h2 {
+  margin: 0 0 10px;
+  color: var(--text);
+  font-size: 15px;
+  font-weight: 700;
+}
+
 .cashflow-card {
   grid-row: span 2;
 }
@@ -452,8 +472,7 @@ p {
   gap: 10px;
   align-items: center;
   min-width: 1080px;
-  padding: 12px;
-  box-shadow: 0 1px 2px rgba(31, 41, 51, 0.04);
+  padding: 0;
 }
 
 .add-row-form input,
@@ -585,7 +604,6 @@ button.danger {
 
 .table-wrap {
   overflow-x: auto;
-  box-shadow: 0 1px 2px rgba(31, 41, 51, 0.04);
 }
 
 table {

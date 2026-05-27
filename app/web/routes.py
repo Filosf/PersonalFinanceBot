@@ -452,7 +452,7 @@ def _editable_categories(categories: list) -> list:
 
 
 def _normalize_tab(tab: str | None) -> str:
-    return tab if tab in {"analytics", "budgets", "categories"} else "analytics"
+    return tab if tab in {"analytics", "transactions", "budgets", "categories"} else "analytics"
 
 
 def _parse_date(
@@ -658,6 +658,7 @@ def _pie_segments(categories: list[dict]) -> list[dict]:
     total = sum((Decimal(item["total"]) for item in categories), Decimal("0"))
     if total <= 0:
         return []
+    gap = Decimal("0.35")
     colors = (
         "#2563eb",
         "#dc2626",
@@ -677,6 +678,11 @@ def _pie_segments(categories: list[dict]) -> list[dict]:
         percent = (amount / total) * Decimal("100")
         start = cursor
         cursor += percent
+        gap_start = start + gap
+        gap_end = cursor - gap
+        if gap_end <= gap_start:
+            gap_start = start
+            gap_end = cursor
         segments.append(
             {
                 "category": item["category"],
@@ -684,6 +690,8 @@ def _pie_segments(categories: list[dict]) -> list[dict]:
                 "percent": percent,
                 "start": start,
                 "end": cursor,
+                "gap_start": gap_start,
+                "gap_end": gap_end,
                 "color": _category_chart_color(item["category"], index, colors),
             }
         )

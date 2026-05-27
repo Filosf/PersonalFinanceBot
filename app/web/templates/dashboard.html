@@ -26,6 +26,7 @@
 <div class="tabs dashboard-tabs">
   <nav class="tab-nav" aria-label="{{ t.dashboard }}">
     <a class="tab-switch {% if active_tab == "analytics" %}active{% endif %}" href="/?tab=analytics" aria-current="{% if active_tab == "analytics" %}page{% else %}false{% endif %}">{{ t.tab_analytics }}</a>
+    <a class="tab-switch {% if active_tab == "transactions" %}active{% endif %}" href="/?tab=transactions" aria-current="{% if active_tab == "transactions" %}page{% else %}false{% endif %}">{{ t.tab_transactions }}</a>
     <a class="tab-switch {% if active_tab == "budgets" %}active{% endif %}" href="/?tab=budgets" aria-current="{% if active_tab == "budgets" %}page{% else %}false{% endif %}">{{ t.tab_budgets }}</a>
     <a class="tab-switch {% if active_tab == "categories" %}active{% endif %}" href="/?tab=categories" aria-current="{% if active_tab == "categories" %}page{% else %}false{% endif %}">{{ t.tab_categories }}</a>
   </nav>
@@ -34,8 +35,11 @@
     <section id="analytics" class="analytics-wrap">
       {% include "partials/analytics.html" %}
     </section>
+  </section>
 
+  <section class="tab-panel dashboard-stack {% if active_tab == "transactions" %}active{% endif %}" {% if active_tab != "transactions" %}hidden{% endif %}>
     <section class="toolbar filters-toolbar">
+      <h2>{{ t.filters }}</h2>
       <form
         class="filters"
         hx-get="/expenses/table"
@@ -56,12 +60,13 @@
     </section>
 
     <section class="add-expense-row quick-add-row">
+      <h2>{{ t.add_transaction }}</h2>
       <form
-        class="panel add-row-form"
+        class="add-row-form"
         hx-post="/expenses"
         hx-target="#expenses-table"
         hx-on::after-request="if(event.detail.successful) this.reset()"
-        aria-label="{{ t.add_expense }}"
+        aria-label="{{ t.add_transaction }}"
       >
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
         <input type="datetime-local" name="spent_at" aria-label="{{ t.date }}" title="{{ t.date }}">
@@ -76,6 +81,7 @@
     </section>
 
     <section id="expenses-table" class="table-wrap ledger-wrap">
+      <h2>{{ t.tab_transactions }}</h2>
       {% include "partials/expenses_table.html" %}
     </section>
   </section>
