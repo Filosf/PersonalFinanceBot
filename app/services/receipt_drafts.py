@@ -78,8 +78,8 @@ class ReceiptDraftService:
         result = await self.session.execute(
             select(ReceiptDraft)
             .where(
-                    ReceiptDraft.id == draft_id,
-                    ReceiptDraft.telegram_user_id == telegram_user_id,
+                ReceiptDraft.id == draft_id,
+                ReceiptDraft.telegram_user_id == telegram_user_id,
             )
             .with_for_update()
         )

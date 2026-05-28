@@ -23,11 +23,11 @@ def _ocr_settings(**overrides: object) -> Settings:
         "ocr_min_confidence": 0.65,
     }
     values.update(overrides)
-    return Settings(**values)
+    return Settings(_env_file=None, **values)
 
 
 def test_extract_receipt_returns_error_when_ocr_disabled() -> None:
-    result = extract_receipt_from_image(_png_bytes(), Settings(ocr_enabled=False))
+    result = extract_receipt_from_image(_png_bytes(), Settings(_env_file=None, ocr_enabled=False))
 
     assert result.success is False
     assert result.parsed is None

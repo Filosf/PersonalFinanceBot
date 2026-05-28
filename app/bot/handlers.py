@@ -285,10 +285,21 @@ async def budgets_ru(message: Message) -> None:
 async def receipt_photo(message: Message) -> None:
     settings = get_settings()
     processing = await message.answer(tr(_telegram_locale(message), "receipt_photo_processing"))
+    photo = message.photo[-1]
+    max_bytes = settings.ocr_max_image_mb * 1024 * 1024
+    if photo.file_size and photo.file_size > max_bytes:
+        await processing.edit_text(
+            _format_receipt_failure(
+                "",
+                _telegram_locale(message),
+                f"Image is too large. Maximum allowed size is {settings.ocr_max_image_mb} MB.",
+            )
+        )
+        return
 
     try:
         image_buffer = BytesIO()
-        await message.bot.download(message.photo[-1], destination=image_buffer)
+        await message.bot.download(photo, destination=image_buffer)
         image_bytes = image_buffer.getvalue()
     except Exception:
         await processing.edit_text(
