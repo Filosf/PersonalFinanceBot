@@ -21,3 +21,26 @@ def expense_actions(
         ]
     )
     return InlineKeyboardMarkup(inline_keyboard=rows)
+
+
+def receipt_draft_actions(draft_id: str, locale: str | None = None) -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text=tr(locale, "receipt_save_expense"),
+                    callback_data=f"receipt_confirm:{draft_id}",
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text=tr(locale, "receipt_enter_manually_button"),
+                    callback_data=f"receipt_manual:{draft_id}",
+                ),
+                InlineKeyboardButton(
+                    text=tr(locale, "receipt_cancel_button"),
+                    callback_data=f"receipt_cancel:{draft_id}",
+                ),
+            ],
+        ]
+    )

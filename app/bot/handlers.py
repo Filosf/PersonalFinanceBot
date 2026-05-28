@@ -1,5 +1,7 @@
+import uuid
 from datetime import UTC, datetime
 from decimal import Decimal
+from io import BytesIO
 from urllib.parse import urlencode, urlparse
 
 from aiogram import F, Router
@@ -15,7 +17,7 @@ from aiogram.types import (
 )
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.bot.keyboards import expense_actions
+from app.bot.keyboards import expense_actions, receipt_draft_actions
 from app.core.config import get_settings
 from app.core.i18n import category_label, tr
 from app.core.runtime_state import get_last_errors
@@ -26,6 +28,8 @@ from app.services.budgets import BudgetService, month_start_from_iso
 from app.services.categories import CategoryService
 from app.services.expenses import ExpenseService
 from app.services.parsing import parse_expense_text
+from app.services.receipt_drafts import ReceiptDraftService
+from app.services.receipt_ocr import ParsedReceipt, extract_receipt_from_image
 from app.services.users import UserService
 
 router = Router()
@@ -277,6 +281,60 @@ async def budgets_ru(message: Message) -> None:
     await budgets(message)
 
 
+@router.message(F.photo)
+async def receipt_photo(message: Message) -> None:
+    settings = get_settings()
+    processing = await message.answer(tr(_telegram_locale(message), "receipt_photo_processing"))
+    photo = message.photo[-1]
+    max_bytes = settings.ocr_max_image_mb * 1024 * 1024
+    if photo.file_size and photo.file_size > max_bytes:
+        await processing.edit_text(
+            _format_receipt_failure(
+                "",
+                _telegram_locale(message),
+                f"Image is too large. Maximum allowed size is {settings.ocr_max_image_mb} MB.",
+            )
+        )
+        return
+
+    try:
+        image_buffer = BytesIO()
+        await message.bot.download(photo, destination=image_buffer)
+        image_bytes = image_buffer.getvalue()
+    except Exception:
+        await processing.edit_text(
+            f"{tr(_telegram_locale(message), 'receipt_ocr_failed')}\n"
+            f"{tr(_telegram_locale(message), 'receipt_manual_hint')}"
+        )
+        return
+
+    result = extract_receipt_from_image(image_bytes, settings)
+    async with SessionLocal() as session:
+        user = await _ensure_user(session, message)
+        locale = user.locale
+        if not result.success or not result.parsed or not result.parsed.amount:
+            await session.commit()
+            text = _format_receipt_failure(result.raw_text, locale, result.error)
+            await processing.edit_text(text)
+            return
+
+        draft = await ReceiptDraftService(session).create_draft(
+            telegram_user_id=user.telegram_id,
+            amount=result.parsed.amount,
+            currency=result.parsed.currency,
+            spent_at=result.parsed.spent_at,
+            merchant=result.parsed.merchant,
+            raw_text=result.parsed.raw_text,
+            confidence=result.parsed.confidence,
+        )
+        await session.commit()
+
+    await processing.edit_text(
+        _format_receipt_recognized(result.parsed, locale),
+        reply_markup=receipt_draft_actions(str(draft.id), locale),
+    )
+
+
 @router.callback_query(F.data.startswith("cat:"))
 async def set_category(callback: CallbackQuery) -> None:
     _, expense_id, category_id = callback.data.split(":")
@@ -310,6 +368,96 @@ async def delete_expense(callback: CallbackQuery) -> None:
         await ExpenseService(session).delete_expense(user.id, int(expense_id))
         await session.commit()
     await callback.message.edit_text(tr(user.locale, "expense_deleted"))
+    await callback.answer()
+
+
+@router.callback_query(F.data.startswith("receipt_confirm:"))
+async def receipt_confirm(callback: CallbackQuery) -> None:
+    draft_id = _receipt_draft_id(callback.data)
+    if draft_id is None:
+        await callback.answer(tr(_telegram_locale(callback), "receipt_not_found"), show_alert=True)
+        return
+
+    async with SessionLocal() as session:
+        user = await _ensure_user_from_telegram(session, callback.from_user)
+        drafts = ReceiptDraftService(session)
+        draft = await drafts.get_pending_draft(draft_id, user.telegram_id)
+        if not draft:
+            await session.rollback()
+            await _edit_callback_message(callback, tr(user.locale, "receipt_not_found"))
+            await callback.answer(tr(user.locale, "receipt_not_found"), show_alert=True)
+            return
+
+        description = draft.merchant or "Receipt"
+        spent_at = (
+            datetime.combine(draft.spent_at, datetime.min.time(), tzinfo=UTC)
+            if draft.spent_at
+            else None
+        )
+        try:
+            expense = await ExpenseService(session).add_expense(
+                user.id,
+                draft.amount,
+                description=description,
+                spent_at=spent_at,
+                currency=draft.currency or user.currency,
+            )
+            await drafts.confirm_draft(draft.id, user.telegram_id)
+            await session.commit()
+        except Exception:
+            await session.rollback()
+            await callback.answer(tr(user.locale, "receipt_confirm_error"), show_alert=True)
+            return
+
+    await _edit_callback_message(
+        callback,
+        f"{tr(user.locale, 'receipt_saved')}\n\n{_format_added(expense, user.locale)}",
+    )
+    await callback.answer(tr(user.locale, "receipt_saved"))
+
+
+@router.callback_query(F.data.startswith("receipt_cancel:"))
+async def receipt_cancel(callback: CallbackQuery) -> None:
+    draft_id = _receipt_draft_id(callback.data)
+    if draft_id is None:
+        await callback.answer(tr(_telegram_locale(callback), "receipt_not_found"), show_alert=True)
+        return
+
+    async with SessionLocal() as session:
+        user = await _ensure_user_from_telegram(session, callback.from_user)
+        drafts = ReceiptDraftService(session)
+        draft = await drafts.get_pending_draft(draft_id, user.telegram_id)
+        if not draft:
+            await session.rollback()
+            await _edit_callback_message(callback, tr(user.locale, "receipt_not_found"))
+            await callback.answer(tr(user.locale, "receipt_not_found"), show_alert=True)
+            return
+        await drafts.cancel_draft(draft.id, user.telegram_id)
+        await session.commit()
+
+    await _edit_callback_message(callback, tr(user.locale, "receipt_cancelled"))
+    await callback.answer(tr(user.locale, "receipt_cancelled"))
+
+
+@router.callback_query(F.data.startswith("receipt_manual:"))
+async def receipt_manual(callback: CallbackQuery) -> None:
+    draft_id = _receipt_draft_id(callback.data)
+    if draft_id is None:
+        await callback.answer(tr(_telegram_locale(callback), "receipt_not_found"), show_alert=True)
+        return
+
+    async with SessionLocal() as session:
+        user = await _ensure_user_from_telegram(session, callback.from_user)
+        drafts = ReceiptDraftService(session)
+        draft = await drafts.get_pending_draft(draft_id, user.telegram_id)
+        if draft:
+            await drafts.cancel_draft(draft.id, user.telegram_id)
+            await session.commit()
+        else:
+            await session.rollback()
+
+    await _edit_callback_message(callback, tr(user.locale, "receipt_enter_manually"))
+    await callback.message.answer(tr(user.locale, "receipt_enter_manually"))
     await callback.answer()
 
 
@@ -543,6 +691,49 @@ def _format_budget_alert(line, locale: str | None, currency: str) -> str:
     )
 
 
+def _format_receipt_failure(
+    raw_text: str, locale: str | None, error: str | None = None
+) -> str:
+    lines = [tr(locale, "receipt_amount_not_found")]
+    if error:
+        title = (
+            "receipt_ocr_unavailable"
+            if "disabled" in error.casefold() or "tesseract" in error.casefold()
+            else "receipt_ocr_failed"
+        )
+        lines[0] = f"{tr(locale, title)}\n{error}"
+    preview = _safe_raw_preview(raw_text)
+    if preview:
+        lines.extend(["", tr(locale, "receipt_raw_preview_title"), preview])
+    lines.extend(["", tr(locale, "receipt_manual_hint")])
+    return "\n".join(lines)
+
+
+def _format_receipt_recognized(parsed: ParsedReceipt, locale: str | None) -> str:
+    return "\n".join(
+        [
+            tr(locale, "receipt_recognized_confirm"),
+            "",
+            f"{tr(locale, 'amount')}: {parsed.amount}",
+            f"{tr(locale, 'currency')}: {_receipt_value(parsed.currency, locale)}",
+            f"{tr(locale, 'date')}: {_receipt_value(parsed.spent_at, locale)}",
+            f"{tr(locale, 'description')}: {_receipt_value(parsed.merchant, locale)}",
+            f"Confidence: {parsed.confidence:.0%}",
+        ]
+    )
+
+
+def _receipt_value(value, locale: str | None) -> str:
+    return str(value) if value else tr(locale, "receipt_not_detected")
+
+
+def _safe_raw_preview(raw_text: str, limit: int = 300) -> str:
+    preview = " ".join(raw_text.split())
+    if len(preview) <= limit:
+        return preview
+    return f"{preview[: limit - 3].rstrip()}..."
+
+
 def _telegram_locale(source) -> str | None:
     user = getattr(source, "from_user", None)
     return getattr(user, "language_code", None)
@@ -581,6 +772,24 @@ def _main_menu(locale: str | None = None) -> ReplyKeyboardMarkup:
         resize_keyboard=True,
         is_persistent=True,
     )
+
+
+def _receipt_draft_id(callback_data: str | None) -> uuid.UUID | None:
+    try:
+        _, draft_id = (callback_data or "").split(":", maxsplit=1)
+        return uuid.UUID(draft_id)
+    except (TypeError, ValueError):
+        return None
+
+
+async def _edit_callback_message(callback: CallbackQuery, text: str) -> None:
+    if not callback.message:
+        return
+    try:
+        await callback.message.edit_text(text)
+    except TelegramBadRequest as exc:
+        if "message is not modified" not in str(exc):
+            raise
 
 
 def _is_public_http_url(url: str) -> bool:

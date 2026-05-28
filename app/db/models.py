@@ -1,3 +1,4 @@
+import uuid
 from datetime import date, datetime
 from decimal import Decimal
 
@@ -5,11 +6,14 @@ from sqlalchemy import (
     BigInteger,
     Date,
     DateTime,
+    Float,
     ForeignKey,
     Index,
     Numeric,
     String,
+    Text,
     UniqueConstraint,
+    Uuid,
     func,
     text,
 )
@@ -104,3 +108,20 @@ class MonthlyBudget(Base):
 
     user: Mapped[User] = relationship()
     category: Mapped[Category | None] = relationship(back_populates="budgets")
+
+
+class ReceiptDraft(Base):
+    __tablename__ = "receipt_drafts"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    telegram_user_id: Mapped[int] = mapped_column(BigInteger, index=True)
+    amount: Mapped[Decimal] = mapped_column(Numeric(12, 2))
+    currency: Mapped[str | None] = mapped_column(String(8))
+    spent_at: Mapped[date | None] = mapped_column(Date)
+    merchant: Mapped[str | None] = mapped_column(String(255))
+    raw_text: Mapped[str | None] = mapped_column(Text)
+    confidence: Mapped[float] = mapped_column(Float)
+    status: Mapped[str] = mapped_column(String(16), default="pending", server_default="pending")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    confirmed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    cancelled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

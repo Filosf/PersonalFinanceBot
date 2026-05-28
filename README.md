@@ -130,6 +130,45 @@ ALLOW_DEVELOPER_LOGIN=true
 python -m alembic upgrade head
 ```
 
+## Receipt OCR prerequisites
+
+Receipt OCR is planned as a free local feature. The Python dependencies are:
+
+- `pytesseract`: Python wrapper around the Tesseract command line tool.
+- `Pillow`: image loading support.
+
+Important: `pytesseract` does not include the Tesseract OCR binary. The `tesseract`
+system package must be installed separately on the machine that runs the bot.
+
+OCR is disabled by default:
+
+```env
+OCR_ENABLED=false
+TESSERACT_CMD=
+OCR_LANGUAGES=eng+heb
+OCR_MIN_CONFIDENCE=0.65
+OCR_MAX_IMAGE_MB=10
+```
+
+Windows install note:
+
+1. Install Tesseract OCR for Windows.
+2. If `tesseract` is not on `PATH`, set `TESSERACT_CMD` in `.env`, for example:
+
+```env
+TESSERACT_CMD=C:\Program Files\Tesseract-OCR\tesseract.exe
+```
+
+Linux/Ubuntu install note:
+
+```bash
+sudo apt-get update
+sudo apt-get install -y tesseract-ocr tesseract-ocr-eng tesseract-ocr-heb
+```
+
+Render note: OCR may not work until the Tesseract binary and language data are installed
+in the Render environment. Installing Python packages alone is not enough.
+
 ## Demo data
 
 Seed two months of demo expenses for a chosen Telegram user:
