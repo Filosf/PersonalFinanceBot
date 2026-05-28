@@ -1,6 +1,7 @@
 import uuid
 from datetime import UTC, datetime
 from decimal import Decimal
+from io import BytesIO
 from urllib.parse import urlencode, urlparse
 
 from aiogram import F, Router
@@ -16,7 +17,7 @@ from aiogram.types import (
 )
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.bot.keyboards import expense_actions
+from app.bot.keyboards import expense_actions, receipt_draft_actions
 from app.core.config import get_settings
 from app.core.i18n import category_label, tr
 from app.core.runtime_state import get_last_errors
@@ -28,6 +29,7 @@ from app.services.categories import CategoryService
 from app.services.expenses import ExpenseService
 from app.services.parsing import parse_expense_text
 from app.services.receipt_drafts import ReceiptDraftService
+from app.services.receipt_ocr import ParsedReceipt, extract_receipt_from_image
 from app.services.users import UserService
 
 router = Router()
@@ -277,6 +279,49 @@ async def budgets(message: Message) -> None:
 @router.message(F.text.startswith("/бюджеты"))
 async def budgets_ru(message: Message) -> None:
     await budgets(message)
+
+
+@router.message(F.photo)
+async def receipt_photo(message: Message) -> None:
+    settings = get_settings()
+    processing = await message.answer(tr(_telegram_locale(message), "receipt_photo_processing"))
+
+    try:
+        image_buffer = BytesIO()
+        await message.bot.download(message.photo[-1], destination=image_buffer)
+        image_bytes = image_buffer.getvalue()
+    except Exception:
+        await processing.edit_text(
+            f"{tr(_telegram_locale(message), 'receipt_ocr_failed')}\n"
+            f"{tr(_telegram_locale(message), 'receipt_manual_hint')}"
+        )
+        return
+
+    result = extract_receipt_from_image(image_bytes, settings)
+    async with SessionLocal() as session:
+        user = await _ensure_user(session, message)
+        locale = user.locale
+        if not result.success or not result.parsed or not result.parsed.amount:
+            await session.commit()
+            text = _format_receipt_failure(result.raw_text, locale, result.error)
+            await processing.edit_text(text)
+            return
+
+        draft = await ReceiptDraftService(session).create_draft(
+            telegram_user_id=user.telegram_id,
+            amount=result.parsed.amount,
+            currency=result.parsed.currency,
+            spent_at=result.parsed.spent_at,
+            merchant=result.parsed.merchant,
+            raw_text=result.parsed.raw_text,
+            confidence=result.parsed.confidence,
+        )
+        await session.commit()
+
+    await processing.edit_text(
+        _format_receipt_recognized(result.parsed, locale),
+        reply_markup=receipt_draft_actions(str(draft.id), locale),
+    )
 
 
 @router.callback_query(F.data.startswith("cat:"))
@@ -633,6 +678,49 @@ def _format_budget_alert(line, locale: str | None, currency: str) -> str:
         remaining=line.remaining,
         currency=currency,
     )
+
+
+def _format_receipt_failure(
+    raw_text: str, locale: str | None, error: str | None = None
+) -> str:
+    lines = [tr(locale, "receipt_amount_not_found")]
+    if error:
+        title = (
+            "receipt_ocr_unavailable"
+            if "disabled" in error.casefold() or "tesseract" in error.casefold()
+            else "receipt_ocr_failed"
+        )
+        lines[0] = f"{tr(locale, title)}\n{error}"
+    preview = _safe_raw_preview(raw_text)
+    if preview:
+        lines.extend(["", tr(locale, "receipt_raw_preview_title"), preview])
+    lines.extend(["", tr(locale, "receipt_manual_hint")])
+    return "\n".join(lines)
+
+
+def _format_receipt_recognized(parsed: ParsedReceipt, locale: str | None) -> str:
+    return "\n".join(
+        [
+            tr(locale, "receipt_recognized_confirm"),
+            "",
+            f"{tr(locale, 'amount')}: {parsed.amount}",
+            f"{tr(locale, 'currency')}: {_receipt_value(parsed.currency, locale)}",
+            f"{tr(locale, 'date')}: {_receipt_value(parsed.spent_at, locale)}",
+            f"{tr(locale, 'description')}: {_receipt_value(parsed.merchant, locale)}",
+            f"Confidence: {parsed.confidence:.0%}",
+        ]
+    )
+
+
+def _receipt_value(value, locale: str | None) -> str:
+    return str(value) if value else tr(locale, "receipt_not_detected")
+
+
+def _safe_raw_preview(raw_text: str, limit: int = 300) -> str:
+    preview = " ".join(raw_text.split())
+    if len(preview) <= limit:
+        return preview
+    return f"{preview[: limit - 3].rstrip()}..."
 
 
 def _telegram_locale(source) -> str | None:
