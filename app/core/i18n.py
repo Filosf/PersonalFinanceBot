@@ -137,6 +137,16 @@ TRANSLATIONS = {
         "open_dashboard": "Open dashboard",
         "period": "Period",
         "rename": "Rename",
+        "receipt_cancel_button": "❌ Cancel",
+        "receipt_cancelled": "Receipt draft cancelled.",
+        "receipt_confirm_error": "Could not save this receipt. Please enter the expense manually.",
+        "receipt_enter_manually": (
+            "Receipt draft cancelled. Enter the expense manually, for example: 250 taxi"
+        ),
+        "receipt_enter_manually_button": "✏️ Enter manually",
+        "receipt_not_found": "Receipt draft was already handled or expired.",
+        "receipt_save_expense": "✅ Save expense",
+        "receipt_saved": "Receipt saved as an expense.",
         "merge": "Merge",
         "merge_into": "Merge into",
         "category_empty": "Category is empty",
@@ -296,6 +306,16 @@ TRANSLATIONS = {
         "open_dashboard": "Открыть панель",
         "period": "Период",
         "rename": "Переименовать",
+        "receipt_cancel_button": "❌ Отменить",
+        "receipt_cancelled": "Черновик чека отменен.",
+        "receipt_confirm_error": "Не удалось сохранить чек. Введите расход вручную.",
+        "receipt_enter_manually": (
+            "Черновик чека отменен. Введите расход вручную, например: 250 такси"
+        ),
+        "receipt_enter_manually_button": "✏️ Ввести вручную",
+        "receipt_not_found": "Черновик чека уже обработан или устарел.",
+        "receipt_save_expense": "✅ Сохранить расход",
+        "receipt_saved": "Чек сохранен как расход.",
         "merge": "Слить",
         "merge_into": "Слить в",
         "category_empty": "Категория пустая",

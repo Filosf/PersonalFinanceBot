@@ -1,3 +1,4 @@
+import uuid
 from datetime import UTC, datetime
 from decimal import Decimal
 from urllib.parse import urlencode, urlparse
@@ -26,6 +27,7 @@ from app.services.budgets import BudgetService, month_start_from_iso
 from app.services.categories import CategoryService
 from app.services.expenses import ExpenseService
 from app.services.parsing import parse_expense_text
+from app.services.receipt_drafts import ReceiptDraftService
 from app.services.users import UserService
 
 router = Router()
@@ -313,6 +315,96 @@ async def delete_expense(callback: CallbackQuery) -> None:
     await callback.answer()
 
 
+@router.callback_query(F.data.startswith("receipt_confirm:"))
+async def receipt_confirm(callback: CallbackQuery) -> None:
+    draft_id = _receipt_draft_id(callback.data)
+    if draft_id is None:
+        await callback.answer(tr(_telegram_locale(callback), "receipt_not_found"), show_alert=True)
+        return
+
+    async with SessionLocal() as session:
+        user = await _ensure_user_from_telegram(session, callback.from_user)
+        drafts = ReceiptDraftService(session)
+        draft = await drafts.get_pending_draft(draft_id, user.telegram_id)
+        if not draft:
+            await session.rollback()
+            await _edit_callback_message(callback, tr(user.locale, "receipt_not_found"))
+            await callback.answer(tr(user.locale, "receipt_not_found"), show_alert=True)
+            return
+
+        description = draft.merchant or "Receipt"
+        spent_at = (
+            datetime.combine(draft.spent_at, datetime.min.time(), tzinfo=UTC)
+            if draft.spent_at
+            else None
+        )
+        try:
+            expense = await ExpenseService(session).add_expense(
+                user.id,
+                draft.amount,
+                description=description,
+                spent_at=spent_at,
+                currency=draft.currency or user.currency,
+            )
+            await drafts.confirm_draft(draft.id, user.telegram_id)
+            await session.commit()
+        except Exception:
+            await session.rollback()
+            await callback.answer(tr(user.locale, "receipt_confirm_error"), show_alert=True)
+            return
+
+    await _edit_callback_message(
+        callback,
+        f"{tr(user.locale, 'receipt_saved')}\n\n{_format_added(expense, user.locale)}",
+    )
+    await callback.answer(tr(user.locale, "receipt_saved"))
+
+
+@router.callback_query(F.data.startswith("receipt_cancel:"))
+async def receipt_cancel(callback: CallbackQuery) -> None:
+    draft_id = _receipt_draft_id(callback.data)
+    if draft_id is None:
+        await callback.answer(tr(_telegram_locale(callback), "receipt_not_found"), show_alert=True)
+        return
+
+    async with SessionLocal() as session:
+        user = await _ensure_user_from_telegram(session, callback.from_user)
+        drafts = ReceiptDraftService(session)
+        draft = await drafts.get_pending_draft(draft_id, user.telegram_id)
+        if not draft:
+            await session.rollback()
+            await _edit_callback_message(callback, tr(user.locale, "receipt_not_found"))
+            await callback.answer(tr(user.locale, "receipt_not_found"), show_alert=True)
+            return
+        await drafts.cancel_draft(draft.id, user.telegram_id)
+        await session.commit()
+
+    await _edit_callback_message(callback, tr(user.locale, "receipt_cancelled"))
+    await callback.answer(tr(user.locale, "receipt_cancelled"))
+
+
+@router.callback_query(F.data.startswith("receipt_manual:"))
+async def receipt_manual(callback: CallbackQuery) -> None:
+    draft_id = _receipt_draft_id(callback.data)
+    if draft_id is None:
+        await callback.answer(tr(_telegram_locale(callback), "receipt_not_found"), show_alert=True)
+        return
+
+    async with SessionLocal() as session:
+        user = await _ensure_user_from_telegram(session, callback.from_user)
+        drafts = ReceiptDraftService(session)
+        draft = await drafts.get_pending_draft(draft_id, user.telegram_id)
+        if draft:
+            await drafts.cancel_draft(draft.id, user.telegram_id)
+            await session.commit()
+        else:
+            await session.rollback()
+
+    await _edit_callback_message(callback, tr(user.locale, "receipt_enter_manually"))
+    await callback.message.answer(tr(user.locale, "receipt_enter_manually"))
+    await callback.answer()
+
+
 @router.callback_query(F.data.startswith("lang:"))
 async def set_language(callback: CallbackQuery) -> None:
     _, locale = callback.data.split(":", maxsplit=1)
@@ -581,6 +673,24 @@ def _main_menu(locale: str | None = None) -> ReplyKeyboardMarkup:
         resize_keyboard=True,
         is_persistent=True,
     )
+
+
+def _receipt_draft_id(callback_data: str | None) -> uuid.UUID | None:
+    try:
+        _, draft_id = (callback_data or "").split(":", maxsplit=1)
+        return uuid.UUID(draft_id)
+    except (TypeError, ValueError):
+        return None
+
+
+async def _edit_callback_message(callback: CallbackQuery, text: str) -> None:
+    if not callback.message:
+        return
+    try:
+        await callback.message.edit_text(text)
+    except TelegramBadRequest as exc:
+        if "message is not modified" not in str(exc):
+            raise
 
 
 def _is_public_http_url(url: str) -> bool:

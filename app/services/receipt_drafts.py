@@ -76,10 +76,12 @@ class ReceiptDraftService:
         self, draft_id: uuid.UUID, telegram_user_id: int
     ) -> ReceiptDraft | None:
         result = await self.session.execute(
-            select(ReceiptDraft).where(
-                ReceiptDraft.id == draft_id,
-                ReceiptDraft.telegram_user_id == telegram_user_id,
+            select(ReceiptDraft)
+            .where(
+                    ReceiptDraft.id == draft_id,
+                    ReceiptDraft.telegram_user_id == telegram_user_id,
             )
+            .with_for_update()
         )
         return result.scalar_one_or_none()
 
