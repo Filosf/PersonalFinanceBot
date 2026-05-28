@@ -284,15 +284,22 @@ async def budgets_ru(message: Message) -> None:
 @router.message(F.photo)
 async def receipt_photo(message: Message) -> None:
     settings = get_settings()
-    processing = await message.answer(tr(_telegram_locale(message), "receipt_photo_processing"))
+    async with SessionLocal() as session:
+        user = await _ensure_user(session, message)
+        await session.commit()
+        locale = user.locale
+        telegram_user_id = user.telegram_id
+
+    processing = await message.answer(tr(locale, "receipt_photo_processing"))
     photo = message.photo[-1]
     max_bytes = settings.ocr_max_image_mb * 1024 * 1024
     if photo.file_size and photo.file_size > max_bytes:
         await processing.edit_text(
             _format_receipt_failure(
                 "",
-                _telegram_locale(message),
-                f"Image is too large. Maximum allowed size is {settings.ocr_max_image_mb} MB.",
+                locale,
+                "image_too_large",
+                max_image_mb=settings.ocr_max_image_mb,
             )
         )
         return
@@ -303,15 +310,13 @@ async def receipt_photo(message: Message) -> None:
         image_bytes = image_buffer.getvalue()
     except Exception:
         await processing.edit_text(
-            f"{tr(_telegram_locale(message), 'receipt_ocr_failed')}\n"
-            f"{tr(_telegram_locale(message), 'receipt_manual_hint')}"
+            f"{tr(locale, 'receipt_ocr_failed')}\n"
+            f"{tr(locale, 'receipt_manual_hint')}"
         )
         return
 
     result = extract_receipt_from_image(image_bytes, settings)
     async with SessionLocal() as session:
-        user = await _ensure_user(session, message)
-        locale = user.locale
         if not result.success or not result.parsed or not result.parsed.amount:
             await session.commit()
             text = _format_receipt_failure(result.raw_text, locale, result.error)
@@ -319,7 +324,7 @@ async def receipt_photo(message: Message) -> None:
             return
 
         draft = await ReceiptDraftService(session).create_draft(
-            telegram_user_id=user.telegram_id,
+            telegram_user_id=telegram_user_id,
             amount=result.parsed.amount,
             currency=result.parsed.currency,
             spent_at=result.parsed.spent_at,
@@ -692,16 +697,14 @@ def _format_budget_alert(line, locale: str | None, currency: str) -> str:
 
 
 def _format_receipt_failure(
-    raw_text: str, locale: str | None, error: str | None = None
+    raw_text: str,
+    locale: str | None,
+    error: str | None = None,
+    max_image_mb: int | None = None,
 ) -> str:
     lines = [tr(locale, "receipt_amount_not_found")]
     if error:
-        title = (
-            "receipt_ocr_unavailable"
-            if "disabled" in error.casefold() or "tesseract" in error.casefold()
-            else "receipt_ocr_failed"
-        )
-        lines[0] = f"{tr(locale, title)}\n{error}"
+        lines[0] = _receipt_error_message(error, locale, max_image_mb)
     preview = _safe_raw_preview(raw_text)
     if preview:
         lines.extend(["", tr(locale, "receipt_raw_preview_title"), preview])
@@ -718,9 +721,22 @@ def _format_receipt_recognized(parsed: ParsedReceipt, locale: str | None) -> str
             f"{tr(locale, 'currency')}: {_receipt_value(parsed.currency, locale)}",
             f"{tr(locale, 'date')}: {_receipt_value(parsed.spent_at, locale)}",
             f"{tr(locale, 'description')}: {_receipt_value(parsed.merchant, locale)}",
-            f"Confidence: {parsed.confidence:.0%}",
+            f"{tr(locale, 'receipt_confidence')}: {parsed.confidence:.0%}",
         ]
     )
+
+
+def _receipt_error_message(
+    error: str, locale: str | None, max_image_mb: int | None = None
+) -> str:
+    normalized = error.casefold()
+    if error == "image_too_large" or "too large" in normalized:
+        return tr(locale, "receipt_image_too_large", max_image_mb=max_image_mb or "?")
+    if "disabled" in normalized or "tesseract" in normalized:
+        return tr(locale, "receipt_ocr_unavailable")
+    if "did not recognize" in normalized:
+        return tr(locale, "receipt_empty_text")
+    return tr(locale, "receipt_ocr_failed")
 
 
 def _receipt_value(value, locale: str | None) -> str:
