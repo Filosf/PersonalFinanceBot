@@ -2,6 +2,7 @@ import re
 from dataclasses import dataclass
 from datetime import date
 from decimal import Decimal, InvalidOperation
+from io import BytesIO
 
 from app.core.config import Settings
 
@@ -26,6 +27,14 @@ class ParsedReceipt:
     warnings: list[str]
 
 
+@dataclass(slots=True)
+class ReceiptOcrResult:
+    success: bool
+    raw_text: str
+    parsed: ParsedReceipt | None
+    error: str | None
+
+
 def check_tesseract_available(settings: Settings) -> bool:
     """Return whether the Tesseract binary is reachable without running OCR."""
     try:
@@ -41,6 +50,92 @@ def check_tesseract_available(settings: Settings) -> bool:
     except (OSError, RuntimeError, pytesseract.TesseractNotFoundError):
         return False
     return True
+
+
+def extract_receipt_from_image(image_bytes: bytes, settings: Settings) -> ReceiptOcrResult:
+    """Extract receipt text in-memory; receipt images must not persist on disk."""
+    if not settings.ocr_enabled:
+        return ReceiptOcrResult(
+            success=False,
+            raw_text="",
+            parsed=None,
+            error="OCR is disabled. Enable OCR_ENABLED to process receipt images.",
+        )
+
+    max_bytes = settings.ocr_max_image_mb * 1024 * 1024
+    if len(image_bytes) > max_bytes:
+        return ReceiptOcrResult(
+            success=False,
+            raw_text="",
+            parsed=None,
+            error=f"Image is too large. Maximum allowed size is {settings.ocr_max_image_mb} MB.",
+        )
+
+    if not check_tesseract_available(settings):
+        return ReceiptOcrResult(
+            success=False,
+            raw_text="",
+            parsed=None,
+            error="Tesseract OCR is not available in this environment.",
+        )
+
+    try:
+        import pytesseract
+        from PIL import Image, UnidentifiedImageError
+    except ImportError as exc:
+        return ReceiptOcrResult(
+            success=False,
+            raw_text="",
+            parsed=None,
+            error=f"OCR dependency is not installed: {exc.name}.",
+        )
+
+    try:
+        # Keep receipt images in memory for privacy/security. If future preprocessing
+        # introduces temporary files, they must be deleted in a finally block.
+        with Image.open(BytesIO(image_bytes)) as image:
+            image.load()
+            raw_text = pytesseract.image_to_string(image, lang=settings.ocr_languages)
+    except (UnidentifiedImageError, OSError) as exc:
+        return ReceiptOcrResult(
+            success=False,
+            raw_text="",
+            parsed=None,
+            error=f"Could not read receipt image: {exc}.",
+        )
+    except Exception as exc:
+        return ReceiptOcrResult(
+            success=False,
+            raw_text="",
+            parsed=None,
+            error=f"OCR processing failed: {exc}.",
+        )
+
+    raw_text = raw_text.strip()
+    if not raw_text:
+        return ReceiptOcrResult(
+            success=False,
+            raw_text="",
+            parsed=None,
+            error="OCR did not recognize any text in the image.",
+        )
+
+    try:
+        parsed = parse_receipt_text(raw_text)
+    except Exception as exc:
+        return ReceiptOcrResult(
+            success=False,
+            raw_text=raw_text,
+            parsed=None,
+            error=f"Receipt text parsing failed: {exc}.",
+        )
+
+    return ReceiptOcrResult(
+        success=parsed.amount is not None and parsed.confidence >= settings.ocr_min_confidence,
+        raw_text=raw_text,
+        parsed=parsed,
+        error=None,
+    )
 
 
 def parse_receipt_text(raw_text: str) -> ParsedReceipt:
