@@ -18,6 +18,11 @@ class Settings(BaseSettings):
     default_timezone: str = "Asia/Jerusalem"
     log_level: str = "INFO"
     allow_developer_login: bool = False
+    ocr_enabled: bool = False
+    tesseract_cmd: str | None = None
+    ocr_languages: str = "eng+heb"
+    ocr_min_confidence: float = 0.65
+    ocr_max_image_mb: int = 10
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
