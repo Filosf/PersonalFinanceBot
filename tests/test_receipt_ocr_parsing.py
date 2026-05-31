@@ -139,6 +139,14 @@ def test_date_extraction_two_digit_year() -> None:
     assert parsed.spent_at == date(2026, 5, 12)
 
 
+def test_future_receipt_date_is_ignored() -> None:
+    parsed = parse_receipt_text("Shop\nTOTAL 38.00\n28/05/2028")
+
+    assert parsed.amount == Decimal("38.00")
+    assert parsed.spent_at is None
+    assert "date not found" in parsed.warnings
+
+
 def test_merchant_extraction_from_first_meaningful_line() -> None:
     parsed = parse_receipt_text("\n\n123456789\nBest Coffee TLV\nTOTAL 40.00")
 

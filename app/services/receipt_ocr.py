@@ -1,6 +1,6 @@
 import re
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, timedelta
 from decimal import Decimal, InvalidOperation
 from io import BytesIO
 
@@ -9,6 +9,7 @@ from app.core.config import Settings
 TOTAL_KEYWORDS = ("total", 'סה"כ', "סהכ", "לתשלום", "סכום", "חיוב")
 TAX_KEYWORDS = ("vat", 'מע"מ', "tax")
 LOW_CONFIDENCE_THRESHOLD = 0.65
+MAX_RECEIPT_FUTURE_DAYS = 1
 
 AMOUNT_RE = re.compile(
     r"(?:₪\s*)?(?P<amount>\d{1,6}(?:[.,]\d{2}))(?:\s*₪)?"
@@ -214,6 +215,7 @@ def _parse_decimal(value: str) -> Decimal | None:
 
 
 def _extract_date(raw_text: str) -> date | None:
+    latest_allowed = date.today() + timedelta(days=MAX_RECEIPT_FUTURE_DAYS)
     for match in DATE_RE.finditer(raw_text):
         day = int(match.group("day"))
         month = int(match.group("month"))
@@ -221,9 +223,12 @@ def _extract_date(raw_text: str) -> date | None:
         if year < 100:
             year += 2000 if year < 70 else 1900
         try:
-            return date(year, month, day)
+            parsed = date(year, month, day)
         except ValueError:
             continue
+        if parsed > latest_allowed:
+            continue
+        return parsed
     return None
 
 
