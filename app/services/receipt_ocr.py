@@ -215,6 +215,7 @@ def _parse_decimal(value: str) -> Decimal | None:
 
 
 def _extract_date(raw_text: str) -> date | None:
+    today = date.today()
     latest_allowed = date.today() + timedelta(days=MAX_RECEIPT_FUTURE_DAYS)
     for match in DATE_RE.finditer(raw_text):
         day = int(match.group("day"))
@@ -227,7 +228,7 @@ def _extract_date(raw_text: str) -> date | None:
         except ValueError:
             continue
         if parsed > latest_allowed:
-            continue
+            return today
         return parsed
     return None
 

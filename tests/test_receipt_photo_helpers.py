@@ -4,7 +4,6 @@ from decimal import Decimal
 from app.bot.handlers import (
     _format_receipt_failure,
     _format_receipt_recognized,
-    _safe_raw_preview,
 )
 from app.services.receipt_ocr import ParsedReceipt
 
@@ -26,23 +25,7 @@ def test_format_receipt_recognized_message_includes_detected_fields() -> None:
     assert "ILS" in text
     assert "2026-05-28" in text
     assert "Fresh Market" in text
-    assert "91%" in text
-
-
-def test_format_receipt_recognized_message_translates_confidence() -> None:
-    parsed = ParsedReceipt(
-        amount=Decimal("123.45"),
-        currency="ILS",
-        spent_at=None,
-        merchant=None,
-        confidence=0.65,
-        raw_text="TOTAL 123.45 ILS",
-        warnings=[],
-    )
-
-    text = _format_receipt_recognized(parsed, "ru")
-
-    assert "Уверенность" in text
+    assert "91%" not in text
     assert "Confidence" not in text
 
 
@@ -63,31 +46,23 @@ def test_format_receipt_recognized_message_marks_missing_fields() -> None:
     assert "не найдено" in text
 
 
-def test_safe_raw_preview_truncates_to_limit() -> None:
-    preview = _safe_raw_preview("word " * 100, limit=60)
-
-    assert len(preview) <= 60
-    assert preview.endswith("...")
-
-
-def test_format_receipt_failure_includes_short_preview_and_manual_hint() -> None:
-    text = _format_receipt_failure("Shop\nNo total here", "en")
+def test_format_receipt_failure_includes_manual_hint_without_raw_preview() -> None:
+    text = _format_receipt_failure("en")
 
     assert "could not confidently" in text
-    assert "Recognized text preview" in text
-    assert "Shop No total here" in text
     assert "Please enter" in text
+    assert "Recognized text preview" not in text
 
 
 def test_format_receipt_failure_uses_unavailable_title_for_tesseract_errors() -> None:
-    text = _format_receipt_failure("", "en", "Tesseract OCR is not available")
+    text = _format_receipt_failure("en", "Tesseract OCR is not available")
 
     assert "currently unavailable" in text
     assert "Tesseract OCR is not available" not in text
 
 
 def test_format_receipt_failure_translates_oversized_image() -> None:
-    text = _format_receipt_failure("", "ru", "image_too_large", max_image_mb=5)
+    text = _format_receipt_failure("ru", "image_too_large", max_image_mb=5)
 
     assert "Фото слишком большое" in text
     assert "5 МБ" in text

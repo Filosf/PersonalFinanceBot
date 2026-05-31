@@ -296,7 +296,6 @@ async def receipt_photo(message: Message) -> None:
     if photo.file_size and photo.file_size > max_bytes:
         await processing.edit_text(
             _format_receipt_failure(
-                "",
                 locale,
                 "image_too_large",
                 max_image_mb=settings.ocr_max_image_mb,
@@ -319,7 +318,7 @@ async def receipt_photo(message: Message) -> None:
     async with SessionLocal() as session:
         if not result.success or not result.parsed or not result.parsed.amount:
             await session.commit()
-            text = _format_receipt_failure(result.raw_text, locale, result.error)
+            text = _format_receipt_failure(locale, result.error)
             await processing.edit_text(text)
             return
 
@@ -376,8 +375,17 @@ async def delete_expense(callback: CallbackQuery) -> None:
     await callback.answer()
 
 
-@router.callback_query(F.data.startswith("receipt_confirm:"))
-async def receipt_confirm(callback: CallbackQuery) -> None:
+@router.callback_query(F.data.startswith("receipt_confirm_date:"))
+async def receipt_confirm_with_date(callback: CallbackQuery) -> None:
+    await _receipt_confirm(callback, use_draft_date=True)
+
+
+@router.callback_query(F.data.startswith("receipt_confirm_today:"))
+async def receipt_confirm_today(callback: CallbackQuery) -> None:
+    await _receipt_confirm(callback, use_draft_date=False)
+
+
+async def _receipt_confirm(callback: CallbackQuery, use_draft_date: bool) -> None:
     draft_id = _receipt_draft_id(callback.data)
     if draft_id is None:
         await callback.answer(tr(_telegram_locale(callback), "receipt_not_found"), show_alert=True)
@@ -396,7 +404,7 @@ async def receipt_confirm(callback: CallbackQuery) -> None:
         description = draft.merchant or "Receipt"
         spent_at = (
             datetime.combine(draft.spent_at, datetime.min.time(), tzinfo=UTC)
-            if draft.spent_at
+            if use_draft_date and draft.spent_at
             else None
         )
         try:
@@ -697,7 +705,6 @@ def _format_budget_alert(line, locale: str | None, currency: str) -> str:
 
 
 def _format_receipt_failure(
-    raw_text: str,
     locale: str | None,
     error: str | None = None,
     max_image_mb: int | None = None,
@@ -705,9 +712,6 @@ def _format_receipt_failure(
     lines = [tr(locale, "receipt_amount_not_found")]
     if error:
         lines[0] = _receipt_error_message(error, locale, max_image_mb)
-    preview = _safe_raw_preview(raw_text)
-    if preview:
-        lines.extend(["", tr(locale, "receipt_raw_preview_title"), preview])
     lines.extend(["", tr(locale, "receipt_manual_hint")])
     return "\n".join(lines)
 
@@ -721,7 +725,6 @@ def _format_receipt_recognized(parsed: ParsedReceipt, locale: str | None) -> str
             f"{tr(locale, 'currency')}: {_receipt_value(parsed.currency, locale)}",
             f"{tr(locale, 'date')}: {_receipt_value(parsed.spent_at, locale)}",
             f"{tr(locale, 'description')}: {_receipt_value(parsed.merchant, locale)}",
-            f"{tr(locale, 'receipt_confidence')}: {parsed.confidence:.0%}",
         ]
     )
 
@@ -741,13 +744,6 @@ def _receipt_error_message(
 
 def _receipt_value(value, locale: str | None) -> str:
     return str(value) if value else tr(locale, "receipt_not_detected")
-
-
-def _safe_raw_preview(raw_text: str, limit: int = 300) -> str:
-    preview = " ".join(raw_text.split())
-    if len(preview) <= limit:
-        return preview
-    return f"{preview[: limit - 3].rstrip()}..."
 
 
 def _telegram_locale(source) -> str | None:

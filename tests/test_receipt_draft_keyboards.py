@@ -9,6 +9,6 @@ def test_receipt_draft_keyboard_callback_data() -> None:
     keyboard = receipt_draft_actions(draft_id, "en")
     rows = keyboard.inline_keyboard
 
-    assert rows[0][0].callback_data == f"receipt_confirm:{draft_id}"
-    assert rows[1][0].callback_data == f"receipt_manual:{draft_id}"
-    assert rows[1][1].callback_data == f"receipt_cancel:{draft_id}"
+    assert rows[0][0].callback_data == f"receipt_confirm_date:{draft_id}"
+    assert rows[0][1].callback_data == f"receipt_confirm_today:{draft_id}"
+    assert rows[1][0].callback_data == f"receipt_cancel:{draft_id}"

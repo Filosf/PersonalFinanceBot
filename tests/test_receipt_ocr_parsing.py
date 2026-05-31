@@ -143,8 +143,8 @@ def test_future_receipt_date_is_ignored() -> None:
     parsed = parse_receipt_text("Shop\nTOTAL 38.00\n28/05/2028")
 
     assert parsed.amount == Decimal("38.00")
-    assert parsed.spent_at is None
-    assert "date not found" in parsed.warnings
+    assert parsed.spent_at == date.today()
+    assert "date not found" not in parsed.warnings
 
 
 def test_merchant_extraction_from_first_meaningful_line() -> None:
