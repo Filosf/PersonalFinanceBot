@@ -768,7 +768,7 @@ p {
 
 .recurring-form-grid {
   display: grid;
-  grid-template-columns: 140px 140px 120px 110px 170px 150px minmax(220px, 1fr) max-content;
+  grid-template-columns: repeat(6, minmax(120px, 1fr)) max-content;
   gap: 10px;
   align-items: end;
 }
@@ -778,6 +778,7 @@ p {
 }
 
 .recurring-description-field {
+  grid-column: span 2;
   min-width: 0;
 }
 
@@ -788,7 +789,7 @@ p {
 
 .recurring-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 260px;
+  grid-template-columns: minmax(0, 1fr);
   gap: 12px;
   padding: 12px;
   border: 1px solid var(--line);
@@ -798,9 +799,16 @@ p {
 
 .recurring-delete-form {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) max-content;
+  grid-template-columns: minmax(190px, 260px) max-content;
   gap: 8px;
   align-items: end;
+  justify-content: end;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+
+.recurring-delete-form label {
+  margin-bottom: 0;
 }
 
 .recurring-note {
@@ -1025,6 +1033,10 @@ form[data-dirty-track="true"] .dirty-field {
 
   .budget-list {
     grid-template-columns: 1fr;
+  }
+
+  .recurring-description-field {
+    grid-column: auto;
   }
 
   .add-row-form,
