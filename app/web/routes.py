@@ -935,7 +935,7 @@ async def _recurring_context(user: User, session: AsyncSession) -> dict:
     ]
     items = await RecurringPaymentService(session).list_active(user.id, month_start)
     return {
-        "items": [
+        "rows": [
             {
                 "payment": payment,
                 "remaining_months": remaining_months(payment, month_start),
