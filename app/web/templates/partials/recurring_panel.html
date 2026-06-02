@@ -1,0 +1,166 @@
+<section id="recurring-panel" class="panel">
+  <h2>{{ t.recurring_payments }}</h2>
+
+  {% if recurring_message %}
+  <p class="status-message">{{ recurring_message }}</p>
+  {% endif %}
+
+  <form
+    class="recurring-create-form dirty-track-form"
+    hx-post="/recurring"
+    hx-target="#recurring-panel"
+    hx-swap="outerHTML"
+    hx-on::after-request="if(event.detail.successful) this.reset()"
+  >
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <div class="recurring-form-grid">
+      <label>
+        {{ t.total_amount }}
+        <input
+          type="number"
+          name="total_amount"
+          step="0.01"
+          min="0.01"
+          placeholder="{{ t.total_amount }}"
+          data-exclusive-amount="total"
+        >
+      </label>
+      <label>
+        {{ t.monthly_payment }}
+        <input
+          type="number"
+          name="payment_amount"
+          step="0.01"
+          min="0.01"
+          placeholder="{{ t.monthly_payment }}"
+          data-exclusive-amount="payment"
+        >
+      </label>
+      <label>
+        {{ t.payment_count }}
+        <input type="number" name="payment_count" min="1" step="1" placeholder="{{ t.infinite }}">
+      </label>
+      <label>
+        {{ t.charge_day }}
+        <input type="number" name="charge_day" min="1" max="31" step="1" value="1" required>
+      </label>
+      <label>
+        {{ t.category }}
+        <select name="category_id" required>
+          {% for category in recurring.categories %}
+          <option value="{{ category.id }}">{{ category.name|category_label(user.locale) }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>
+        {{ t.start_from }}
+        <select name="start_timing">
+          <option value="current">{{ t.scope_current }}</option>
+          <option value="next">{{ t.scope_next }}</option>
+        </select>
+      </label>
+      <label class="recurring-description-field">
+        {{ t.description }}
+        <input type="text" name="description" maxlength="500" placeholder="{{ t.description }}">
+      </label>
+      <button type="submit">{{ t.create }}</button>
+    </div>
+  </form>
+
+  <div class="recurring-list">
+    {% for row in recurring.items %}
+    {% set payment = row.payment %}
+    <article class="recurring-row">
+      <form
+        data-dirty-track="true"
+        hx-post="/recurring/{{ payment.series_id }}"
+        hx-target="#recurring-panel"
+        hx-swap="outerHTML"
+      >
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <div class="recurring-form-grid recurring-edit-grid">
+          <label>
+            {{ t.total_amount }}
+            <input
+              type="number"
+              name="total_amount"
+              step="0.01"
+              min="0.01"
+              value="{% if payment.amount_source == "total" %}{{ payment.total_amount }}{% endif %}"
+              placeholder="{% if payment.amount_source != "total" and payment.total_amount %}{{ payment.total_amount }}{% else %}{{ t.total_amount }}{% endif %}"
+              data-exclusive-amount="total"
+            >
+          </label>
+          <label>
+            {{ t.monthly_payment }}
+            <input
+              type="number"
+              name="payment_amount"
+              step="0.01"
+              min="0.01"
+              value="{% if payment.amount_source == "payment" %}{{ payment.payment_amount }}{% endif %}"
+              placeholder="{% if payment.amount_source == "total" %}{{ payment.payment_amount }}{% else %}{{ t.monthly_payment }}{% endif %}"
+              data-exclusive-amount="payment"
+            >
+          </label>
+          <label>
+            {{ t.payment_count }}
+            <input type="number" name="payment_count" min="1" step="1" value="{{ payment.payment_count or "" }}" placeholder="{{ t.infinite }}">
+          </label>
+          <label>
+            {{ t.charge_day }}
+            <input type="number" name="charge_day" min="1" max="31" step="1" value="{{ payment.charge_day }}" required>
+          </label>
+          <label>
+            {{ t.category }}
+            <select name="category_id" required>
+              {% for category in recurring.categories %}
+              <option value="{{ category.id }}" {% if category.id == payment.category_id %}selected{% endif %}>{{ category.name|category_label(user.locale) }}</option>
+              {% endfor %}
+            </select>
+          </label>
+          <label>
+            {{ t.apply_changes_from }}
+            <select name="scope">
+              <option value="current">{{ t.scope_current }}</option>
+              <option value="next">{{ t.scope_next }}</option>
+              <option value="all">{{ t.scope_all }}</option>
+            </select>
+          </label>
+          <label class="recurring-description-field">
+            {{ t.description }}
+            <input type="text" name="description" maxlength="500" value="{{ payment.description }}" placeholder="{{ t.description }}">
+          </label>
+          <button type="submit">{{ t.save }}</button>
+        </div>
+        <p class="recurring-note">
+          {{ t.starts }} {{ payment.start_month }}
+          · {{ t.monthly_payment }} {{ payment.payment_amount }} {{ user.currency }}
+          · {% if row.remaining_months is none %}{{ t.recurring_infinite }}{% else %}{{ row.remaining_months }} {{ t.months_left }}{% endif %}
+        </p>
+      </form>
+      <form
+        class="recurring-delete-form"
+        data-dirty-track="true"
+        hx-post="/recurring/{{ payment.series_id }}/delete"
+        hx-target="#recurring-panel"
+        hx-swap="outerHTML"
+        hx-confirm="{{ t.delete }}?"
+      >
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <label>
+          {{ t.delete_from }}
+          <select name="scope">
+            <option value="current">{{ t.scope_current }}</option>
+            <option value="next">{{ t.scope_next }}</option>
+            <option value="all">{{ t.scope_all }}</option>
+          </select>
+        </label>
+        <button class="danger" type="submit">{{ t.delete }}</button>
+      </form>
+    </article>
+    {% else %}
+    <p class="empty-inline">{{ t.no_recurring_payments }}</p>
+    {% endfor %}
+  </div>
+</section>

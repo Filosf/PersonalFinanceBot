@@ -30,6 +30,7 @@ from app.services.expenses import ExpenseService
 from app.services.parsing import parse_expense_text
 from app.services.receipt_drafts import ReceiptDraftService
 from app.services.receipt_ocr import ParsedReceipt, extract_receipt_from_image
+from app.services.recurring_payments import RecurringPaymentService, remaining_months
 from app.services.users import UserService
 
 router = Router()
@@ -279,6 +280,19 @@ async def budgets(message: Message) -> None:
 @router.message(F.text.startswith("/бюджеты"))
 async def budgets_ru(message: Message) -> None:
     await budgets(message)
+
+
+@router.message(Command("recurring"))
+async def recurring_payments(message: Message) -> None:
+    async with SessionLocal() as session:
+        user = await _ensure_user(session, message)
+        items = await RecurringPaymentService(session).list_active(user.id)
+    await message.answer(_format_recurring_report(items, user.locale, user.currency))
+
+
+@router.message(F.text.startswith("/регулярные") | F.text.startswith("/подписки"))
+async def recurring_payments_ru(message: Message) -> None:
+    await recurring_payments(message)
 
 
 @router.message(F.photo)
@@ -702,6 +716,27 @@ def _format_budget_alert(line, locale: str | None, currency: str) -> str:
         remaining=line.remaining,
         currency=currency,
     )
+
+
+def _format_recurring_report(items, locale: str | None, currency: str) -> str:
+    if not items:
+        return tr(locale, "recurring_report_empty")
+    lines = [tr(locale, "recurring_report_title")]
+    for payment in items:
+        category = category_label(payment.category.name, locale) if payment.category else "-"
+        description = payment.description or category
+        remaining = remaining_months(payment)
+        remaining_text = (
+            tr(locale, "recurring_infinite")
+            if remaining is None
+            else f"{remaining} {tr(locale, 'months_left')}"
+        )
+        lines.append(
+            f"{description}: {payment.payment_amount:.2f} {currency}, "
+            f"{tr(locale, 'charge_day').lower()} {payment.charge_day}, "
+            f"{category}, {remaining_text}"
+        )
+    return "\n".join(lines)
 
 
 def _format_receipt_failure(

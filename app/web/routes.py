@@ -1,3 +1,4 @@
+import uuid
 from datetime import UTC, date, datetime, timedelta
 from datetime import timezone as fixed_timezone
 from decimal import Decimal, InvalidOperation
@@ -23,6 +24,7 @@ from app.services.budgets import BudgetService, month_bounds, month_start_from_i
 from app.services.categories import CategoryService, is_protected_category
 from app.services.defaults import DEFAULT_CATEGORIES
 from app.services.expenses import ExpenseFilters, ExpenseService
+from app.services.recurring_payments import RecurringPaymentService, remaining_months
 from app.services.users import UserService
 
 router = APIRouter()
@@ -66,6 +68,7 @@ async def index(
     expenses = await ExpenseService(session).list_expenses(user.id)
     analytics = await _analytics_context(user, session, period="month")
     budgets = await _budgets_context(user, session)
+    recurring = await _recurring_context(user, session)
     csrf_token = _csrf_token(request)
     response = request.app.state.templates.TemplateResponse(
         request,
@@ -81,6 +84,7 @@ async def index(
             "expenses": expenses,
             "analytics": analytics,
             "budgets": budgets,
+            "recurring": recurring,
             "active_tab": _normalize_tab(tab),
             "currency_message": currency_message,
             "csrf_token": csrf_token,
@@ -453,6 +457,102 @@ async def delete_category(
     )
 
 
+@router.post("/recurring", response_class=HTMLResponse)
+async def create_recurring_payment(
+    request: Request,
+    category_id: int = Form(),
+    total_amount: str = Form(default=""),
+    payment_amount: str = Form(default=""),
+    payment_count: str = Form(default=""),
+    charge_day: str = Form(default="1"),
+    description: str = Form(default=""),
+    start_timing: str = Form(default="current"),
+    csrf_token: str = Form(default=""),
+    user: User | None = Depends(web_user),
+    session: AsyncSession = Depends(get_session),
+) -> HTMLResponse:
+    if not user:
+        raise HTTPException(status_code=401)
+    _require_csrf(request, csrf_token)
+    try:
+        await RecurringPaymentService(session).create(
+            user.id,
+            category_id=category_id,
+            total_amount=_parse_decimal(total_amount),
+            payment_amount=_parse_decimal(payment_amount),
+            payment_count=payment_count,
+            charge_day=charge_day,
+            description=description,
+            start_timing=start_timing,
+        )
+    except (ValueError, PermissionError) as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    await session.commit()
+    return await _recurring_panel_response(
+        request, user, session, labels(user.locale)["recurring_created"]
+    )
+
+
+@router.post("/recurring/{series_id}", response_class=HTMLResponse)
+async def update_recurring_payment(
+    request: Request,
+    series_id: uuid.UUID,
+    category_id: int = Form(),
+    total_amount: str = Form(default=""),
+    payment_amount: str = Form(default=""),
+    payment_count: str = Form(default=""),
+    charge_day: str = Form(default="1"),
+    description: str = Form(default=""),
+    scope: str = Form(default="current"),
+    csrf_token: str = Form(default=""),
+    user: User | None = Depends(web_user),
+    session: AsyncSession = Depends(get_session),
+) -> HTMLResponse:
+    if not user:
+        raise HTTPException(status_code=401)
+    _require_csrf(request, csrf_token)
+    try:
+        await RecurringPaymentService(session).update(
+            user.id,
+            series_id,
+            scope=scope,
+            category_id=category_id,
+            total_amount=_parse_decimal(total_amount),
+            payment_amount=_parse_decimal(payment_amount),
+            payment_count=payment_count,
+            charge_day=charge_day,
+            description=description,
+        )
+    except (ValueError, PermissionError) as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    await session.commit()
+    return await _recurring_panel_response(
+        request, user, session, labels(user.locale)["recurring_updated"]
+    )
+
+
+@router.post("/recurring/{series_id}/delete", response_class=HTMLResponse)
+async def delete_recurring_payment(
+    request: Request,
+    series_id: uuid.UUID,
+    scope: str = Form(default="current"),
+    csrf_token: str = Form(default=""),
+    user: User | None = Depends(web_user),
+    session: AsyncSession = Depends(get_session),
+) -> HTMLResponse:
+    if not user:
+        raise HTTPException(status_code=401)
+    _require_csrf(request, csrf_token)
+    try:
+        await RecurringPaymentService(session).delete(user.id, series_id, scope=scope)
+    except (ValueError, PermissionError) as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    await session.commit()
+    return await _recurring_panel_response(
+        request, user, session, labels(user.locale)["recurring_deleted"]
+    )
+
+
 async def _categories_panel_response(
     request: Request,
     user: User,
@@ -487,7 +587,8 @@ def _editable_categories(categories: list) -> list:
 
 
 def _normalize_tab(tab: str | None) -> str:
-    return tab if tab in {"analytics", "transactions", "budgets", "categories"} else "analytics"
+    tabs = {"analytics", "transactions", "budgets", "categories", "recurring"}
+    return tab if tab in tabs else "analytics"
 
 
 def _parse_date(
@@ -801,6 +902,47 @@ async def _budgets_context(
             }
             for category in categories
         ],
+    }
+
+
+async def _recurring_panel_response(
+    request: Request,
+    user: User,
+    session: AsyncSession,
+    message: str | None = None,
+) -> HTMLResponse:
+    recurring = await _recurring_context(user, session)
+    return request.app.state.templates.TemplateResponse(
+        request,
+        "partials/recurring_panel.html",
+        {
+            "request": request,
+            "user": user,
+            "t": labels(user.locale),
+            "recurring": recurring,
+            "recurring_message": message,
+            "csrf_token": _csrf_token(request),
+        },
+    )
+
+
+async def _recurring_context(user: User, session: AsyncSession) -> dict:
+    month_start = datetime.now(_timezone(user.timezone)).date().replace(day=1)
+    categories = [
+        category
+        for category in await CategoryService(session).list_categories(user.id)
+        if category.name != "Income"
+    ]
+    items = await RecurringPaymentService(session).list_active(user.id, month_start)
+    return {
+        "items": [
+            {
+                "payment": payment,
+                "remaining_months": remaining_months(payment, month_start),
+            }
+            for payment in items
+        ],
+        "categories": categories,
     }
 
 

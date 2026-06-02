@@ -28,6 +28,12 @@ function updateDirtyState(form) {
 document.addEventListener("DOMContentLoaded", () => initializeDirtyTracking());
 
 document.addEventListener("input", (event) => {
+  if (event.target.matches("[data-exclusive-amount]") && event.target.value !== "") {
+    const form = event.target.closest("form");
+    const counterpart = event.target.dataset.exclusiveAmount === "total" ? "payment" : "total";
+    const other = form?.querySelector(`[data-exclusive-amount='${counterpart}']`);
+    if (other) other.value = "";
+  }
   const form = event.target.closest(".row-form, .dirty-track-form, form[data-dirty-track='true']");
   if (form) updateDirtyState(form);
 });

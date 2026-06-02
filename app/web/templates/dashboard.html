@@ -41,6 +41,7 @@
   <nav class="tab-nav" aria-label="{{ t.dashboard }}">
     <a class="tab-switch {% if active_tab == "analytics" %}active{% endif %}" href="/?tab=analytics" aria-current="{% if active_tab == "analytics" %}page{% else %}false{% endif %}">{{ t.tab_analytics }}</a>
     <a class="tab-switch {% if active_tab == "transactions" %}active{% endif %}" href="/?tab=transactions" aria-current="{% if active_tab == "transactions" %}page{% else %}false{% endif %}">{{ t.tab_transactions }}</a>
+    <a class="tab-switch {% if active_tab == "recurring" %}active{% endif %}" href="/?tab=recurring" aria-current="{% if active_tab == "recurring" %}page{% else %}false{% endif %}">{{ t.tab_recurring }}</a>
     <a class="tab-switch {% if active_tab == "budgets" %}active{% endif %}" href="/?tab=budgets" aria-current="{% if active_tab == "budgets" %}page{% else %}false{% endif %}">{{ t.tab_budgets }}</a>
     <a class="tab-switch {% if active_tab == "categories" %}active{% endif %}" href="/?tab=categories" aria-current="{% if active_tab == "categories" %}page{% else %}false{% endif %}">{{ t.tab_categories }}</a>
   </nav>
@@ -98,6 +99,10 @@
       <h2>{{ t.tab_transactions }}</h2>
       {% include "partials/expenses_table.html" %}
     </section>
+  </section>
+
+  <section class="tab-panel {% if active_tab == "recurring" %}active{% endif %}" {% if active_tab != "recurring" %}hidden{% endif %}>
+    {% include "partials/recurring_panel.html" %}
   </section>
 
   <section class="tab-panel {% if active_tab == "budgets" %}active{% endif %}" {% if active_tab != "budgets" %}hidden{% endif %}>

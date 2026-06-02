@@ -93,6 +93,7 @@ TRANSLATIONS = {
             "/add_category NAME - create category\n"
             "/web - get a dashboard login link\n"
             "/budgets - monthly budget status\n"
+            "/recurring - active recurring payments\n"
             "/last - show last expense\n"
             "/delete_last - delete last expense"
         ),
@@ -110,7 +111,9 @@ TRANSLATIONS = {
             "/range YYYY-MM-DD YYYY-MM-DD for a custom period.\n\n"
             "5. Use /budgets to see monthly budget progress. Budgets are configured "
             "on the website.\n\n"
-            "6. Use /web to get a secure login link for the dashboard. The dashboard "
+            "6. Use /recurring to see active subscriptions, loans, and other recurring payments. "
+            "Recurring payments are configured on the website.\n\n"
+            "7. Use /web to get a secure login link for the dashboard. The dashboard "
             "has filters, charts, category editing, budget settings, and full record editing.\n\n"
             "Use /commands when you only need the command list."
         ),
@@ -156,10 +159,31 @@ TRANSLATIONS = {
         "receipt_save_today": "Add today",
         "receipt_save_with_date": "Add with date",
         "receipt_saved": "Receipt saved as an expense.",
+        "recurring_created": "Recurring payment created.",
+        "recurring_deleted": "Recurring payment deleted.",
+        "recurring_infinite": "regular payment",
+        "recurring_payments": "Recurring payments",
+        "recurring_report_empty": "No active recurring payments. Manage them on the website.",
+        "recurring_report_title": "Active recurring payments",
+        "recurring_updated": "Recurring payment updated.",
         "merge": "Merge",
         "merge_into": "Merge into",
         "category_empty": "Category is empty",
         "delete_empty_or_merge": "Delete if empty, or merge into selected category",
+        "apply_changes_from": "Apply changes from",
+        "charge_day": "Charge day",
+        "delete_from": "Delete from",
+        "infinite": "Infinite",
+        "monthly_payment": "Monthly payment",
+        "months_left": "months left",
+        "no_recurring_payments": "No recurring payments yet",
+        "payment_count": "Months",
+        "scope_all": "All",
+        "scope_current": "Current month",
+        "scope_next": "Next month",
+        "start_from": "Start from",
+        "starts": "Starts",
+        "total_amount": "Total amount",
         "remaining": "left",
         "save": "Save",
         "search_description": "Search description",
@@ -167,6 +191,7 @@ TRANSLATIONS = {
         "signed_in_as": "Signed in as",
         "tab_analytics": "Analytics",
         "tab_transactions": "Transactions",
+        "tab_recurring": "Recurring",
         "tab_budgets": "Budgets",
         "tab_categories": "Categories",
         "telegram_id": "Telegram ID",
@@ -270,6 +295,7 @@ TRANSLATIONS = {
             "/add_category или /добавить_категорию НАЗВАНИЕ - создать категорию\n"
             "/web или /сайт - ссылка для входа на сайт\n"
             "/budgets или /бюджеты - состояние бюджетов на месяц\n"
+            "/recurring или /регулярные - активные регулярные платежи\n"
             "/last или /последний - последний расход\n"
             "/delete_last или /удалить_последний - удалить последний расход"
         ),
@@ -288,7 +314,9 @@ TRANSLATIONS = {
             "а /range YYYY-MM-DD YYYY-MM-DD - выбранный период.\n\n"
             "5. Бюджеты: команда /budgets покажет, сколько уже потрачено и сколько "
             "осталось. Настраиваются бюджеты на сайте.\n\n"
-            "6. Сайт открывается через /web. Там есть фильтры, графики, категории, "
+            "6. Регулярные платежи: команда /recurring покажет активные подписки, кредиты "
+            "и другие повторяющиеся платежи. Настраиваются они на сайте.\n\n"
+            "7. Сайт открывается через /web. Там есть фильтры, графики, категории, "
             "бюджеты и полное редактирование записей.\n\n"
             "Если нужен только список команд, используйте /commands или /команды."
         ),
@@ -334,10 +362,33 @@ TRANSLATIONS = {
         "receipt_save_today": "Добавить сегодня",
         "receipt_save_with_date": "Добавить с датой",
         "receipt_saved": "Чек сохранен как расход.",
+        "recurring_created": "Регулярный платеж создан.",
+        "recurring_deleted": "Регулярный платеж удален.",
+        "recurring_infinite": "регулярный платеж",
+        "recurring_payments": "Регулярные платежи",
+        "recurring_report_empty": (
+            "Активных регулярных платежей нет. Управление находится на сайте."
+        ),
+        "recurring_report_title": "Активные регулярные платежи",
+        "recurring_updated": "Регулярный платеж обновлен.",
         "merge": "Слить",
         "merge_into": "Слить в",
         "category_empty": "Категория пустая",
         "delete_empty_or_merge": "Удалить пустую или слить в выбранную категорию",
+        "apply_changes_from": "Применить изменения с",
+        "charge_day": "День списания",
+        "delete_from": "Удалить с",
+        "infinite": "Бессрочно",
+        "monthly_payment": "Платеж",
+        "months_left": "мес. осталось",
+        "no_recurring_payments": "Регулярных платежей пока нет",
+        "payment_count": "Количество месяцев",
+        "scope_all": "Все",
+        "scope_current": "Текущий месяц",
+        "scope_next": "Следующий месяц",
+        "start_from": "Начать с",
+        "starts": "Начало",
+        "total_amount": "Сумма",
         "remaining": "осталось",
         "save": "Сохранить",
         "search_description": "Поиск по описанию",
@@ -345,6 +396,7 @@ TRANSLATIONS = {
         "signed_in_as": "Вошли как",
         "tab_analytics": "Аналитика",
         "tab_transactions": "Транзакции",
+        "tab_recurring": "Регулярные",
         "tab_budgets": "Бюджеты",
         "tab_categories": "Категории",
         "telegram_id": "Telegram ID",

@@ -762,6 +762,53 @@ p {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.recurring-create-form {
+  margin-bottom: 18px;
+}
+
+.recurring-form-grid {
+  display: grid;
+  grid-template-columns: 140px 140px 120px 110px 170px 150px minmax(220px, 1fr) max-content;
+  gap: 10px;
+  align-items: end;
+}
+
+.recurring-form-grid label {
+  margin-bottom: 0;
+}
+
+.recurring-description-field {
+  min-width: 0;
+}
+
+.recurring-list {
+  display: grid;
+  gap: 12px;
+}
+
+.recurring-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 260px;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-soft);
+}
+
+.recurring-delete-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) max-content;
+  gap: 8px;
+  align-items: end;
+}
+
+.recurring-note {
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
 .empty-inline {
   color: var(--muted);
   font-size: 13px;
@@ -924,6 +971,9 @@ form[data-dirty-track="true"] .dirty-field {
   .grid,
   .filters,
   .add-row-form,
+  .recurring-form-grid,
+  .recurring-row,
+  .recurring-delete-form,
   .row-form {
     grid-template-columns: 1fr;
   }

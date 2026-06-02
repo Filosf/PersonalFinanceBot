@@ -9,6 +9,7 @@ from sqlalchemy import (
     Float,
     ForeignKey,
     Index,
+    Integer,
     Numeric,
     String,
     Text,
@@ -37,6 +38,7 @@ class User(Base):
 
     categories: Mapped[list["Category"]] = relationship(back_populates="user")
     expenses: Mapped[list["Expense"]] = relationship(back_populates="user")
+    recurring_payments: Mapped[list["RecurringPayment"]] = relationship(back_populates="user")
 
 
 class Category(Base):
@@ -51,6 +53,7 @@ class Category(Base):
     user: Mapped[User] = relationship(back_populates="categories")
     expenses: Mapped[list["Expense"]] = relationship(back_populates="category")
     budgets: Mapped[list["MonthlyBudget"]] = relationship(back_populates="category")
+    recurring_payments: Mapped[list["RecurringPayment"]] = relationship(back_populates="category")
 
 
 class Expense(Base):
@@ -125,3 +128,34 @@ class ReceiptDraft(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     confirmed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     cancelled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class RecurringPayment(Base):
+    __tablename__ = "recurring_payments"
+    __table_args__ = (
+        Index("ix_recurring_payments_user_series", "user_id", "series_id"),
+        Index("ix_recurring_payments_user_period", "user_id", "start_month", "end_month"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    series_id: Mapped[uuid.UUID] = mapped_column(Uuid, default=uuid.uuid4, index=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    category_id: Mapped[int] = mapped_column(
+        ForeignKey("categories.id", ondelete="RESTRICT"), index=True
+    )
+    amount_source: Mapped[str] = mapped_column(String(16))
+    total_amount: Mapped[Decimal | None] = mapped_column(Numeric(12, 2))
+    payment_amount: Mapped[Decimal] = mapped_column(Numeric(12, 2))
+    payment_count: Mapped[int | None] = mapped_column(Integer)
+    charge_day: Mapped[int] = mapped_column(Integer, default=1, server_default="1")
+    description: Mapped[str] = mapped_column(String(500), default="", server_default="")
+    start_month: Mapped[date] = mapped_column(Date, index=True)
+    end_month: Mapped[date | None] = mapped_column(Date, index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), index=True)
+
+    user: Mapped[User] = relationship(back_populates="recurring_payments")
+    category: Mapped[Category] = relationship(back_populates="recurring_payments")

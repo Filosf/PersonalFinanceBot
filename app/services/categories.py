@@ -1,7 +1,7 @@
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.db.models import Category, Expense
+from app.db.models import Category, Expense, RecurringPayment
 from app.services.defaults import DEFAULT_CATEGORIES
 
 PROTECTED_CATEGORIES = {"General", "Income"}
@@ -87,17 +87,33 @@ class CategoryService:
             .where(Expense.user_id == user_id, Expense.category_id == category_id)
             .values(category_id=target_id)
         )
+        await self.session.execute(
+            RecurringPayment.__table__.update()
+            .where(
+                RecurringPayment.user_id == user_id,
+                RecurringPayment.category_id == category_id,
+                RecurringPayment.deleted_at.is_(None),
+            )
+            .values(category_id=target_id)
+        )
         await self.session.delete(category)
 
     async def expense_count(self, user_id: int, category_id: int) -> int:
-        result = await self.session.execute(
+        expense_result = await self.session.execute(
             select(func.count(Expense.id)).where(
                 Expense.user_id == user_id,
                 Expense.category_id == category_id,
                 Expense.deleted_at.is_(None),
             )
         )
-        return int(result.scalar_one())
+        recurring_result = await self.session.execute(
+            select(func.count(RecurringPayment.id)).where(
+                RecurringPayment.user_id == user_id,
+                RecurringPayment.category_id == category_id,
+                RecurringPayment.deleted_at.is_(None),
+            )
+        )
+        return int(expense_result.scalar_one()) + int(recurring_result.scalar_one())
 
     async def require_owned(self, user_id: int, category_id: int) -> Category:
         result = await self.session.execute(
