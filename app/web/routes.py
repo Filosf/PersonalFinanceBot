@@ -60,6 +60,7 @@ async def index(
             },
         )
 
+    await _materialize_due_recurring(user, session)
     categories = await CategoryService(session).list_categories(user.id)
     expense_counts = {
         category.id: await CategoryService(session).expense_count(user.id, category.id)
@@ -206,6 +207,7 @@ async def analytics(
 ) -> HTMLResponse:
     if not user:
         raise HTTPException(status_code=401)
+    await _materialize_due_recurring(user, session)
     context = await _analytics_context(
         user,
         session,
@@ -235,6 +237,7 @@ async def expenses_table(
 ) -> HTMLResponse:
     if not user:
         raise HTTPException(status_code=401)
+    await _materialize_due_recurring(user, session)
 
     filters = ExpenseFilters(
         date_from=_parse_date(date_from, user.timezone),
@@ -589,6 +592,17 @@ def _editable_categories(categories: list) -> list:
 def _normalize_tab(tab: str | None) -> str:
     tabs = {"analytics", "transactions", "budgets", "categories", "recurring"}
     return tab if tab in tabs else "analytics"
+
+
+async def _materialize_due_recurring(user: User, session: AsyncSession) -> None:
+    today = datetime.now(_timezone(user.timezone)).date()
+    created = await RecurringPaymentService(session).materialize_due_expenses(
+        user.id,
+        currency=user.currency,
+        through_date=today,
+    )
+    if created:
+        await session.commit()
 
 
 def _parse_date(

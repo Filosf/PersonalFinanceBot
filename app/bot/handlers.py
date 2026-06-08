@@ -273,6 +273,7 @@ async def delete_last_ru(message: Message) -> None:
 async def budgets(message: Message) -> None:
     async with SessionLocal() as session:
         user = await _ensure_user(session, message)
+        await _materialize_due_recurring(session, user)
         report = await BudgetService(session).report(user.id, month_start_from_iso())
     await message.answer(_format_budget_report(report, user.locale, user.currency))
 
@@ -286,6 +287,7 @@ async def budgets_ru(message: Message) -> None:
 async def recurring_payments(message: Message) -> None:
     async with SessionLocal() as session:
         user = await _ensure_user(session, message)
+        await _materialize_due_recurring(session, user)
         items = await RecurringPaymentService(session).list_active(user.id)
     await message.answer(_format_recurring_report(items, user.locale, user.currency))
 
@@ -630,6 +632,7 @@ async def _ensure_user_from_telegram(session: AsyncSession, tg_user):
 async def _send_summary(message: Message, start_at: datetime, end_at: datetime) -> None:
     async with SessionLocal() as session:
         user = await _ensure_user(session, message)
+        await _materialize_due_recurring(session, user)
         service = ExpenseService(session)
         summary = await service.summary(user.id, start_at, end_at)
         cashflow = await service.cashflow_summary(user.id, start_at, end_at)
@@ -648,6 +651,16 @@ async def _send_summary(message: Message, start_at: datetime, end_at: datetime) 
         for item in summary["categories"]
     )
     await message.answer("\n".join(lines))
+
+
+async def _materialize_due_recurring(session: AsyncSession, user) -> None:
+    created = await RecurringPaymentService(session).materialize_due_expenses(
+        user.id,
+        currency=user.currency,
+        through_date=datetime.now(UTC).date(),
+    )
+    if created:
+        await session.commit()
 
 
 def _month_range(value: str | None) -> tuple[datetime, datetime]:

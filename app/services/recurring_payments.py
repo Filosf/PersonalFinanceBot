@@ -1,13 +1,14 @@
 import uuid
+from calendar import monthrange
 from dataclasses import dataclass
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, time
 from decimal import ROUND_HALF_UP, Decimal, InvalidOperation
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.db.models import RecurringPayment
+from app.db.models import Expense, RecurringPayment, RecurringPaymentOccurrence
 from app.services.categories import CategoryService
 
 AMOUNT_SOURCE_TOTAL = "total"
@@ -136,6 +137,46 @@ class RecurringPaymentService:
             if _is_within_payment_count(payment, month)
         ]
 
+    async def materialize_due_expenses(
+        self,
+        user_id: int,
+        *,
+        currency: str,
+        through_date: date | None = None,
+    ) -> list[Expense]:
+        today = through_date or datetime.now(UTC).date()
+        month = today.replace(day=1)
+        created: list[Expense] = []
+        for payment in await self.list_active(user_id, month):
+            due_date = _due_date(month, payment.charge_day)
+            if due_date > today:
+                continue
+            if await self._occurrence_exists(user_id, payment.series_id, month):
+                continue
+            expense = Expense(
+                user_id=user_id,
+                category_id=payment.category_id,
+                amount=payment.payment_amount,
+                currency=currency,
+                kind="expense",
+                description=payment.description or "Recurring payment",
+                spent_at=datetime.combine(due_date, time.min, tzinfo=UTC),
+            )
+            self.session.add(expense)
+            await self.session.flush()
+            self.session.add(
+                RecurringPaymentOccurrence(
+                    user_id=user_id,
+                    recurring_payment_id=payment.id,
+                    series_id=payment.series_id,
+                    month_start=month,
+                    expense_id=expense.id,
+                )
+            )
+            created.append(expense)
+        await self.session.flush()
+        return created
+
     async def update(
         self,
         user_id: int,
@@ -253,6 +294,18 @@ class RecurringPaymentService:
         )
         return list(result.scalars())
 
+    async def _occurrence_exists(
+        self, user_id: int, series_id: uuid.UUID, month_start: date
+    ) -> bool:
+        result = await self.session.execute(
+            select(RecurringPaymentOccurrence.id).where(
+                RecurringPaymentOccurrence.user_id == user_id,
+                RecurringPaymentOccurrence.series_id == series_id,
+                RecurringPaymentOccurrence.month_start == month_start,
+            )
+        )
+        return result.scalar_one_or_none() is not None
+
     async def _require_expense_category(self, user_id: int, category_id: int) -> None:
         category = await CategoryService(self.session).require_owned(user_id, category_id)
         if category.name == "Income":
@@ -351,3 +404,8 @@ def _is_within_payment_count(payment: RecurringPayment, month_start: date) -> bo
     if payment.payment_count is None:
         return True
     return _months_between(payment.start_month, month_start) < payment.payment_count
+
+
+def _due_date(month_start: date, charge_day: int) -> date:
+    last_day = monthrange(month_start.year, month_start.month)[1]
+    return month_start.replace(day=min(charge_day, last_day))

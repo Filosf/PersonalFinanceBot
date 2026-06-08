@@ -75,6 +75,9 @@ class Expense(Base):
 
     user: Mapped[User] = relationship(back_populates="expenses")
     category: Mapped[Category] = relationship(back_populates="expenses")
+    recurring_occurrence: Mapped["RecurringPaymentOccurrence | None"] = relationship(
+        back_populates="expense"
+    )
 
 
 class MonthlyBudget(Base):
@@ -159,3 +162,28 @@ class RecurringPayment(Base):
 
     user: Mapped[User] = relationship(back_populates="recurring_payments")
     category: Mapped[Category] = relationship(back_populates="recurring_payments")
+    occurrences: Mapped[list["RecurringPaymentOccurrence"]] = relationship(
+        back_populates="recurring_payment"
+    )
+
+
+class RecurringPaymentOccurrence(Base):
+    __tablename__ = "recurring_payment_occurrences"
+    __table_args__ = (
+        UniqueConstraint("user_id", "series_id", "month_start", name="uq_recurring_series_month"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    recurring_payment_id: Mapped[int] = mapped_column(
+        ForeignKey("recurring_payments.id", ondelete="CASCADE"), index=True
+    )
+    series_id: Mapped[uuid.UUID] = mapped_column(Uuid, index=True)
+    month_start: Mapped[date] = mapped_column(Date, index=True)
+    expense_id: Mapped[int] = mapped_column(
+        ForeignKey("expenses.id", ondelete="CASCADE"), unique=True, index=True
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    recurring_payment: Mapped[RecurringPayment] = relationship(back_populates="occurrences")
+    expense: Mapped[Expense] = relationship(back_populates="recurring_occurrence")
